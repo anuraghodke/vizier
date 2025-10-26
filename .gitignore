@@ -4,3 +4,22 @@ __pycache__/
 .DS_Store
 .env
 
+# Temporary storage directories
+uploads/
+outputs/
+
+# FILM model files (large binaries)
+models/film/
+
+# Node modules and Next.js
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+
+# Python cache
+*.py[cod]
+*$py.class
+
+# Docker
+*.log
+
