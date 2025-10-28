@@ -43,33 +43,84 @@ For more details, see [ANIMATION_STYLE.md](docs/ANIMATION_STYLE.md).
 - **AI**: Google FILM (Frame Interpolation for Large Motion), Claude API
 - **Infrastructure**: Docker Compose
 
-## Current Status
+## Quick Start
 
-Phase 0 Complete - Environment validated, ready for Phase 1 development.
+### Prerequisites
+- Docker Desktop
+- Python 3.10+ (for local development/testing)
+- Node.js 20+ (for frontend development)
+- Anthropic API key ([Get one here](https://console.anthropic.com/settings/keys))
 
-See [PHASE_0_SUMMARY.md](docs/PHASE_0_SUMMARY.md) for detailed validation results.
-
-## Quick Start (Coming Soon)
+### Setup
 
 ```bash
 # Clone repository
 git clone <repository-url>
+cd vizier
 
 # Configure environment
 cp .env.example .env
-# Add your ANTHROPIC_API_KEY to .env
+# Edit .env and add your ANTHROPIC_API_KEY
 
 # Start services
 docker-compose up -d
 
 # Access application
-open http://localhost:3000
+# Frontend: http://localhost:3000
+# Backend API: http://localhost:8000
+# API Docs: http://localhost:8000/docs
+```
+
+### Running Tests
+
+```bash
+# Activate virtual environment
+source .venv/bin/activate
+
+# Test FILM model
+python tests/test_film_setup.py
+python tests/test_film_with_images.py
+
+# Test Claude API (requires ANTHROPIC_API_KEY in .env)
+python tests/test_claude_api.py
+
+# Test backend services
+python tests/test_services.py
 ```
 
 ## Development
 
-See [ANIMATION_STYLE.md](docs/ANIMATION_STYLE.md) for animation principles and testing strategy.
+### Project Structure
 
-## License
+```
+vizier/
+├── backend/          # FastAPI application and services
+├── frontend/         # Next.js React application
+├── docs/            # Project documentation
+├── tests/           # Test files and assets
+├── models/          # FILM model (gitignored)
+├── uploads/         # Temporary keyframe storage (gitignored)
+└── outputs/         # Generated frames (gitignored)
+```
 
-TBD
+### Running Locally
+
+**Backend:**
+```bash
+cd backend
+source ../.venv/bin/activate
+uvicorn app.main:app --reload
+```
+
+**Frontend:**
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+**Celery Worker:**
+```bash
+cd backend
+celery -A app.workers.celery_worker worker --loglevel=info
+```
