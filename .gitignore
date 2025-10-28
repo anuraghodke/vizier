@@ -1,25 +1,98 @@
-.venv/
-__pycache__/
-*.pyc
-.DS_Store
+# ============================================
+# Environment & Secrets
+# ============================================
 .env
+.env.local
+*.pem
+*.key
 
+# ============================================
+# Python
+# ============================================
+.venv/
+venv/
+ENV/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# ============================================
+# Node.js & Frontend
+# ============================================
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ============================================
+# Application Data
+# ============================================
 # Temporary storage directories
 uploads/
 outputs/
 
+# Test output (generated during testing)
+tests/test_output/
+
 # FILM model files (large binaries)
 models/film/
 
-# Node modules and Next.js
-frontend/node_modules/
-frontend/.next/
-frontend/out/
-
-# Python cache
-*.py[cod]
-*$py.class
-
+# ============================================
 # Docker
+# ============================================
 *.log
+docker-compose.override.yml
+
+# ============================================
+# IDEs & Editors
+# ============================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ============================================
+# Testing
+# ============================================
+.coverage
+.pytest_cache/
+htmlcov/
+.tox/
+.cache
+.mypy_cache/
+
+# ============================================
+# OS
+# ============================================
+Thumbs.db
+Desktop.ini
 
