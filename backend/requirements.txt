@@ -9,7 +9,7 @@ redis==5.2.1
 
 # AI/ML
 anthropic==0.71.0
-tensorflow==2.18.0
+tensorflow==2.20.0
 tensorflow-hub==0.16.1
 
 # Image Processing
