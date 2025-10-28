@@ -10,7 +10,7 @@
 **Name**: Vizier
 **Purpose**: Help beginner artists create smooth 2D animations by auto-generating intermediate frames between keyframes
 **Target User**: Artists using Procreate who struggle with manual inbetweening
-**Current Status**: **Phase 1 Complete** - Core backend services implemented, ready for Phase 2
+**Current Status**: **Model Evaluation Phase** - Phase 1 complete, evaluating alternative models (RIFE/Ebsynth) before proceeding to Phase 2
 
 ### What It Does
 1. User uploads 2 PNG keyframes with transparency (Procreate exports)
@@ -41,13 +41,38 @@ Vizier supports **classic cel animation techniques** with physics-based interpol
 - Unit tests passing for both services
 - See [docs/PHASE_1_SUMMARY.md](./PHASE_1_SUMMARY.md)
 
-### Next Steps
+### Current Status: Model Evaluation Phase
 
-🔄 **Phase 2: Task Queue & Job Processing** (NEXT)
+⚠️ **PAUSE ON PHASE 2** - Model Evaluation in Progress
+
+Phase 0 testing revealed **critical limitations** with FILM:
+- ❌ Color + Motion = ghosting (red→blue ball shows two faint balls, no purple)
+- ❌ Object transformations = crossfading instead of motion
+- ⚠️ Only works well for same-color objects or camera pans
+
+**Current Activity**: Evaluating alternative models to find best fit
+- See [docs/MODEL_COMPARISON_PLAN.md](./MODEL_COMPARISON_PLAN.md) for research strategy
+- See [docs/PHASE_0_FINDINGS.md](./PHASE_0_FINDINGS.md) for detailed FILM analysis
+
+**Experiment Branches**:
+- `experiment/rife` - Testing RIFE (anime-focused interpolation)
+- `experiment/ebsynth` - Testing Ebsynth (style-preserving synthesis)
+- `experiment/animatediff` - Testing AnimateDiff (diffusion-based, optional)
+
+**Decision Point**: Once model evaluation complete, will either:
+1. Continue with FILM (accept limitations, document clearly)
+2. Switch to better model (RIFE, Ebsynth, or hybrid)
+3. Resume Phase 2 with chosen model
+
+### On Hold Until Model Decision
+
+🔄 **Phase 2: Task Queue & Job Processing** (PAUSED)
 - Setup Celery worker with Redis
 - Implement `generate_frames` async task
 - Add progress tracking
 - Error handling and cleanup
+
+*Note: Will resume once we've decided on the interpolation model*
 
 ---
 
@@ -89,6 +114,7 @@ vizier/
 │
 ├── docs/                              # 📁 Documentation
 │   ├── CLAUDE.md                      # This file - AI assistant context
+│   ├── MODEL_COMPARISON_PLAN.md       # Model evaluation research plan
 │   ├── ANIMATION_STYLE.md             # Animation principles and testing strategy
 │   ├── PHASE_0_SUMMARY.md             # Phase 0 results
 │   ├── PHASE_0_FINDINGS.md            # FILM behavior analysis
@@ -123,8 +149,8 @@ vizier/
 - **Framework**: FastAPI (Python 3.10+)
 - **Task Queue**: Celery + Redis
 - **AI Models**:
-  - **FILM**: Google's Frame Interpolation for Large Motion (TensorFlow Hub)
-  - **Claude**: Anthropic API (`claude-sonnet-4-5-20250929`) for NL parsing
+  - **Interpolation**: FILM (current), evaluating RIFE/Ebsynth alternatives
+  - **NL Parsing**: Claude API (`claude-sonnet-4-5-20250929`)
 - **Image Processing**: Pillow, OpenCV, NumPy
 
 ### Frontend
@@ -666,4 +692,4 @@ npm run dev  # Starts on http://localhost:3000
 
 ---
 
-**Last Updated**: Phase 1 Complete - October 27, 2025
+**Last Updated**: Model Evaluation Phase - October 27, 2025
