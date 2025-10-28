@@ -1,0 +1,97 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "vizier"
+version = "0.1.0"
+description = "AI-assisted 2D animation inbetweening tool for beginner artists"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "Anurag Hodke"},
+]
+
+dependencies = [
+    # Web Framework
+    "fastapi==0.115.5",
+    "uvicorn[standard]==0.32.1",
+    "python-multipart==0.0.20",
+
+    # Task Queue
+    "celery==5.4.0",
+    "redis==5.2.1",
+
+    # AI/ML
+    "anthropic==0.71.0",
+    "tensorflow==2.20.0",
+    "tensorflow-hub==0.16.1",
+
+    # Image Processing
+    "Pillow==11.0.0",
+    "opencv-python-headless==4.10.0.84",
+    "numpy==2.2.3",
+
+    # Data Validation
+    "pydantic==2.10.5",
+    "pydantic-settings==2.7.1",
+
+    # Utilities
+    "python-dotenv==1.0.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "black>=24.0.0",
+    "mypy>=1.8.0",
+    "ruff>=0.2.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["backend/app"]
+
+[tool.black]
+line-length = 100
+target-version = ["py310", "py311", "py312"]
+exclude = '''
+/(
+    \.git
+  | \.venv
+  | __pycache__
+  | models/film
+  | outputs
+  | uploads
+)/
+'''
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+exclude = [
+    ".git",
+    ".venv",
+    "__pycache__",
+    "models/film",
+    "outputs",
+    "uploads",
+]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+exclude = [
+    "models/film",
+    ".venv",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
