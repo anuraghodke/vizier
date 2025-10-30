@@ -81,10 +81,10 @@ Objects deform during motion to convey weight, flexibility, and impact. The obje
 - Rhythmic squash/stretch cycle
 
 ### Common Mistakes
-- ❌ Forgetting volume preservation (ball gets bigger/smaller)
-- ❌ Applying to rigid objects (metal box squashing)
-- ❌ Too subtle (loses impact)
-- ❌ Too extreme (looks broken)
+- [X] Forgetting volume preservation (ball gets bigger/smaller)
+- [X] Applying to rigid objects (metal box squashing)
+- [X] Too subtle (loses impact)
+- [X] Too extreme (looks broken)
 
 ### Conflicts
 - **Solid Drawing**: If volume isn't preserved, breaks 3D illusion
@@ -146,9 +146,9 @@ A preparatory movement in the opposite direction before the main action. Helps t
 4. Keyframe 2: Running left
 
 ### Common Mistakes
-- ❌ No anticipation for large actions (looks unnatural)
-- ❌ Too much anticipation (telegraphs action too early)
-- ❌ Wrong direction (doesn't oppose main action)
+- [X] No anticipation for large actions (looks unnatural)
+- [X] Too much anticipation (telegraphs action too early)
+- [X] Wrong direction (doesn't oppose main action)
 
 ### Conflicts
 - **Slow In and Slow Out**: Anticipation itself should ease in
@@ -205,9 +205,9 @@ Present ideas clearly so the audience understands what's happening. Avoid clutte
 - Ensure ball contrasts with background
 
 ### Common Mistakes
-- ❌ Multiple elements competing for attention
-- ❌ Important action obscured by other objects
-- ❌ Busy background distracts from main action
+- [X] Multiple elements competing for attention
+- [X] Important action obscured by other objects
+- [X] Busy background distracts from main action
 
 ### Conflicts
 - **Secondary Action**: Must balance secondary with staging clarity
@@ -319,9 +319,9 @@ Different parts of an object move at different rates. When the main body stops, 
 - Hair at tips has more delay than roots
 
 ### Common Mistakes
-- ❌ All parts moving in sync (looks stiff)
-- ❌ Too much delay (parts look disconnected)
-- ❌ No damping (oscillates forever)
+- [X] All parts moving in sync (looks stiff)
+- [X] Too much delay (parts look disconnected)
+- [X] No damping (oscillates forever)
 
 ### Conflicts
 - **Timing**: Must coordinate timing of overlapping parts
@@ -423,9 +423,9 @@ Result: Gradually comes to rest
 - Very smooth, natural motion
 
 ### Common Mistakes
-- ❌ Linear spacing (looks mechanical)
-- ❌ Too aggressive ease (looks floaty)
-- ❌ No ease on heavy objects (ignores physics)
+- [X] Linear spacing (looks mechanical)
+- [X] Too aggressive ease (looks floaty)
+- [X] No ease on heavy objects (ignores physics)
 
 ### Conflicts
 - **Timing**: Works together - slow in/out is HOW timing is controlled
@@ -517,10 +517,10 @@ y = y0 + vy * t - 0.5 * g * t^2
 - More vertical during lift, more horizontal during swing
 
 ### Common Mistakes
-- ❌ Straight-line motion for organic objects
-- ❌ Wrong pivot point (arc looks off)
-- ❌ Linear spacing along arc (should ease)
-- ❌ Flat arc (insufficient curvature)
+- [X] Straight-line motion for organic objects
+- [X] Wrong pivot point (arc looks off)
+- [X] Linear spacing along arc (should ease)
+- [X] Flat arc (insufficient curvature)
 
 ### Conflicts
 - **Slow In and Slow Out**: Apply easing along arc path, not just x/y
@@ -594,9 +594,9 @@ Additional actions that support and enrich the main action without distracting f
 - Secondary: facial strain, leg bracing, torso twist
 
 ### Common Mistakes
-- ❌ Secondary too strong (distracts from main)
-- ❌ Secondary conflicts with main action
-- ❌ Too many secondary actions (chaotic)
+- [X] Secondary too strong (distracts from main)
+- [X] Secondary conflicts with main action
+- [X] Too many secondary actions (chaotic)
 
 ### Conflicts
 - **Staging**: Secondary must not violate staging clarity
@@ -674,9 +674,9 @@ The number of frames used for an action determines its speed, weight, and person
 - Sad character: 14 frames for same turn
 
 ### Common Mistakes
-- ❌ Wrong frame count for object weight
-- ❌ Inconsistent timing between similar actions
-- ❌ Ignoring user's speed request
+- [X] Wrong frame count for object weight
+- [X] Inconsistent timing between similar actions
+- [X] Ignoring user's speed request
 
 ### Conflicts
 - **Slow In and Slow Out**: Timing (frame count) + Easing (frame spacing) work together
@@ -734,9 +734,9 @@ Pushing reality beyond literal truth for dramatic or comedic effect. Pure realis
 - Extreme easing (rubber band feel)
 
 ### Common Mistakes
-- ❌ Exaggerating realistic styles (looks wrong)
-- ❌ Not exaggerating cartoon styles (looks stiff)
-- ❌ Inconsistent exaggeration (some frames cartoony, some not)
+- [X] Exaggerating realistic styles (looks wrong)
+- [X] Not exaggerating cartoon styles (looks stiff)
+- [X] Inconsistent exaggeration (some frames cartoony, some not)
 
 ### Conflicts
 - **Solid Drawing**: Extreme exaggeration can break volume/structure
@@ -804,20 +804,20 @@ Understand forms as three-dimensional objects with volume, weight, and balance. 
 ### Examples
 
 **Character Rotating**:
-- ✅ Body parts maintain relative size
-- ✅ Foreshortening applied correctly
-- ✅ Proportions consistent
-- ❌ Head grows larger as it rotates (wrong)
+- [COMPLETE] Body parts maintain relative size
+- [COMPLETE] Foreshortening applied correctly
+- [COMPLETE] Proportions consistent
+- [X] Head grows larger as it rotates (wrong)
 
 **Ball Bouncing**:
-- ✅ Volume preserved during squash/stretch
-- ❌ Ball gets smaller in mid-air (wrong)
+- [COMPLETE] Volume preserved during squash/stretch
+- [X] Ball gets smaller in mid-air (wrong)
 
 ### Common Mistakes
-- ❌ Morphing instead of rotating (2D thinking)
-- ❌ Volume changes randomly
-- ❌ Proportions shift between frames
-- ❌ Unbalanced poses (character would fall)
+- [X] Morphing instead of rotating (2D thinking)
+- [X] Volume changes randomly
+- [X] Proportions shift between frames
+- [X] Unbalanced poses (character would fall)
 
 ### Conflicts
 - **Squash & Stretch**: Must preserve volume during deformation
@@ -897,10 +897,10 @@ Create characters and motion that are pleasing to look at. Clear design, readabl
 - Cluttered pose
 
 ### Common Mistakes
-- ❌ Tangents (lines touching awkwardly)
-- ❌ Ambiguous overlaps
-- ❌ Messy, inconsistent line work
-- ❌ Unbalanced compositions
+- [X] Tangents (lines touching awkwardly)
+- [X] Ambiguous overlaps
+- [X] Messy, inconsistent line work
+- [X] Unbalanced compositions
 
 ### Conflicts
 - **Staging**: Appeal and staging work together (both about clarity)
@@ -965,14 +965,14 @@ How principles work together:
 
 ```
 For each generated frame:
-✓ Volume consistency (Solid Drawing)
-✓ Motion follows planned arc (Arc)
-✓ Frame spacing matches timing curve (Slow In/Out, Timing)
-✓ Deformations look natural (Squash & Stretch)
-✓ Parts motion is staggered if applicable (Follow Through)
-✓ Silhouette is clear (Appeal, Staging)
-✓ Lines are clean and consistent (Appeal)
-✓ No morphing artifacts (Solid Drawing)
+[DONE] Volume consistency (Solid Drawing)
+[DONE] Motion follows planned arc (Arc)
+[DONE] Frame spacing matches timing curve (Slow In/Out, Timing)
+[DONE] Deformations look natural (Squash & Stretch)
+[DONE] Parts motion is staggered if applicable (Follow Through)
+[DONE] Silhouette is clear (Appeal, Staging)
+[DONE] Lines are clean and consistent (Appeal)
+[DONE] No morphing artifacts (Solid Drawing)
 
 Assign scores per principle, weight by priority
 ```

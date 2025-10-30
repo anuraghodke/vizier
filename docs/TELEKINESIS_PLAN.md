@@ -406,7 +406,7 @@ START
 [VALIDATOR] ──→ validation
   ↓             (Quality check)
   ↓
-  ├─ quality >= 8.0 ──→ END ✓
+  ├─ quality >= 8.0 ──→ END [DONE]
   │
   ├─ quality >= 6.0 ──→ [REFINER] ──→ refined_frames
   │                         ↓

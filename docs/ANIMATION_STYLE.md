@@ -82,17 +82,17 @@ Vizier's interpolation must:
 
 ## FILM Model Behavior Analysis (Phase 0 Test Results)
 
-### ⚠️ CRITICAL FINDINGS FROM TESTING
+### [WARNING] CRITICAL FINDINGS FROM TESTING
 
 Phase 0 testing revealed that FILM's behavior **differs significantly** from initial expectations. See `PHASE_0_FINDINGS.md` for complete analysis.
 
-### What FILM Does Well ✅
+### What FILM Does Well 
 - **Same-object motion**: Objects moving with consistent appearance (same color, same shape)
 - **Camera pans**: Background motion and parallax effects
 - **Subtle timing**: Small adjustments to motion speed/timing
 - **Optical flow tracking**: Can track pixels when appearance is consistent
 
-### What FILM Struggles With ❌
+### What FILM Struggles With 
 **TESTED AND CONFIRMED**:
 
 1. **Position + Color Change = Ghosting**
@@ -124,10 +124,10 @@ Phase 0 testing revealed that FILM's behavior **differs significantly** from ini
 ### Test Results Summary
 | Test Case | Result | Quality |
 |-----------|--------|---------|
-| Red ball → Blue ball (transparent BG) | Strong ghosting | ❌ BAD |
-| Red ball → Blue ball (white BG) | Strong ghosting | ❌ BAD |
-| Red ball → Red ball (white BG) | Motion blur, centered | ⚠️ OK |
-| Blue ball → Blue ball (white BG) | Motion blur, centered | ⚠️ OK |
+| Red ball → Blue ball (transparent BG) | Strong ghosting | [FAILED] BAD |
+| Red ball → Blue ball (white BG) | Strong ghosting | [FAILED] BAD |
+| Red ball → Red ball (white BG) | Motion blur, centered | [WARNING] OK |
+| Blue ball → Blue ball (white BG) | Motion blur, centered | [WARNING] OK |
 
 **Conclusion**: FILM is best for consistent-appearance motion, struggles with transformations.
 
@@ -219,10 +219,10 @@ When building `claude_service.py`:
 
 ### Minimum Viable Product (MVP)
 An interpolated animation passes validation if:
-1. ✅ **No ghosting**: Objects don't appear duplicated or semi-transparent
-2. ✅ **Smooth motion**: Objects move along clear paths, not teleport
-3. ✅ **Property continuity**: Color/scale/rotation changes are gradual
-4. ✅ **Temporal consistency**: Motion speed feels natural
+1. [COMPLETE] **No ghosting**: Objects don't appear duplicated or semi-transparent
+2. [COMPLETE] **Smooth motion**: Objects move along clear paths, not teleport
+3. [COMPLETE] **Property continuity**: Color/scale/rotation changes are gradual
+4. [COMPLETE] **Temporal consistency**: Motion speed feels natural
 
 ### Stretch Goals (Post-MVP)
 1. **Perspective-aware**: Maintains vanishing point consistency
@@ -291,9 +291,9 @@ Result:
 ## Success Metrics
 
 ### Phase 0-1 (Current)
-- ✅ FILM produces motion-aware interpolation (not crossfade)
-- ✅ Simple translation works (e.g., ball moving left to right)
-- ✅ Color transitions work (e.g., red ball → blue ball)
+- [COMPLETE] FILM produces motion-aware interpolation (not crossfade)
+- [COMPLETE] Simple translation works (e.g., ball moving left to right)
+- [COMPLETE] Color transitions work (e.g., red ball → blue ball)
 
 ### Phase 2-3
 - ⬜ Rotations work without major artifacts

@@ -4,7 +4,7 @@
 
 Phase 0 testing has revealed **critical limitations** in FILM's interpolation behavior that directly impact our animation goals. While FILM can track motion to some degree, it produces **ghosting/crossfading** rather than clean object motion, especially when objects change color and position simultaneously.
 
-**Status**: ⚠️ Phase 0 reveals challenges that require strategy adjustment for Phase 1+
+**Status**: [WARNING] Phase 0 reveals challenges that require strategy adjustment for Phase 1+
 
 ---
 
@@ -13,7 +13,7 @@ Phase 0 testing has revealed **critical limitations** in FILM's interpolation be
 ### Test 1: Transparent Background + Position + Color Change
 **Setup**: Red ball (left) → Blue ball (right) on transparent background
 
-**Result**: ❌ **Strong Crossfading**
+**Result**: [X] **Strong Crossfading**
 - Two faint balls visible (red on left, blue on right)
 - No purple ball in the middle
 - Appears as two separate objects fading in/out
@@ -27,7 +27,7 @@ Phase 0 testing has revealed **critical limitations** in FILM's interpolation be
 ### Test 2: Solid White Background + Position + Color Change
 **Setup**: Red ball (left) → Blue ball (right) on white background
 
-**Result**: ❌ **Strong Crossfading**
+**Result**: [X] **Strong Crossfading**
 - Two balls visible (red left, blue right)
 - Slightly more solid than transparent background test
 - Still appears as two objects, not one moving
@@ -41,7 +41,7 @@ Phase 0 testing has revealed **critical limitations** in FILM's interpolation be
 ### Test 3: White Background + Position (Same Color)
 **Setup**: Red ball (left) → Red ball (right) on white background
 
-**Result**: ⚠️ **Partial Success**
+**Result**: [WARNING] **Partial Success**
 - Ball center is roughly at expected position (x=273 vs expected x=256)
 - Still shows some ghosting/motion blur
 - Better than color-change tests but not clean
@@ -55,7 +55,7 @@ Phase 0 testing has revealed **critical limitations** in FILM's interpolation be
 ### Test 4: White Background + Position (Same Color, Blue)
 **Setup**: Blue ball (left) → Blue ball (right) on white background
 
-**Result**: ⚠️ **Partial Success**
+**Result**: [WARNING] **Partial Success**
 - Ball center at x=271 (expected x=256)
 - Similar ghosting to red ball test
 - Consistent behavior across colors
@@ -101,10 +101,10 @@ Even with same-colored objects:
 ### Gap Analysis
 | Feature | Goal | FILM Capability | Gap |
 |---------|------|-----------------|-----|
-| Object continuity | One object transforms | Two objects crossfade | ❌ Major |
-| Color interpolation | Smooth red→purple→blue | Separate red + blue | ❌ Major |
-| Position tracking | Clean motion path | Motion blur + ghosting | ⚠️ Moderate |
-| Style | Hand-drawn cel animation | Photorealistic morph | ⚠️ Moderate |
+| Object continuity | One object transforms | Two objects crossfade | [X] Major |
+| Color interpolation | Smooth red→purple→blue | Separate red + blue | [X] Major |
+| Position tracking | Clean motion path | Motion blur + ghosting | [WARNING] Moderate |
+| Style | Hand-drawn cel animation | Photorealistic morph | [WARNING] Moderate |
 
 ---
 
@@ -119,12 +119,12 @@ Even with same-colored objects:
 ### FILM's Compatibility
 | Technique | FILM Support | Notes |
 |-----------|--------------|-------|
-| **Camera pans** | ✅ Good | Background motion should work well |
-| **Object rotation** | ⚠️ Limited | Extreme rotations cause morphing |
-| **Perspective shifts** | ❌ Poor | Moving vanishing points confuse optical flow |
-| **Character motion** | ⚠️ Depends | Works if appearance stays consistent |
-| **Squash & stretch** | ❌ Poor | Shape changes → morphing |
-| **Color/lighting changes** | ❌ Poor | Appearance change → ghosting |
+| **Camera pans** | [COMPLETE] Good | Background motion should work well |
+| **Object rotation** | [WARNING] Limited | Extreme rotations cause morphing |
+| **Perspective shifts** | [X] Poor | Moving vanishing points confuse optical flow |
+| **Character motion** | [WARNING] Depends | Works if appearance stays consistent |
+| **Squash & stretch** | [X] Poor | Shape changes → morphing |
+| **Color/lighting changes** | [X] Poor | Appearance change → ghosting |
 
 ---
 
@@ -200,7 +200,7 @@ Our animation violates these:
 
 ## Updated Success Criteria
 
-### Phase 0 (Complete) ✅
+### Phase 0 (Complete) 
 - [x] FILM loaded and working
 - [x] Understand FILM's actual behavior (not assumptions)
 - [x] Identify limitations
@@ -212,18 +212,18 @@ Our animation violates these:
 
 ### MVP (Realistic Goals)
 **Working well**:
-- ✅ Objects moving with consistent appearance
-- ✅ Camera pans / background parallax
-- ✅ Subtle timing adjustments
+- [COMPLETE] Objects moving with consistent appearance
+- [COMPLETE] Camera pans / background parallax
+- [COMPLETE] Subtle timing adjustments
 
 **Limited support**:
-- ⚠️ Rotations (works but with morphing)
-- ⚠️ Scale changes (works but with blur)
+- [WARNING] Rotations (works but with morphing)
+- [WARNING] Scale changes (works but with blur)
 
 **Not supported (clear user warnings)**:
-- ❌ Position + color change (ghosting)
-- ❌ Extreme transformations (morphing)
-- ❌ Squash & stretch (volume not preserved)
+- [X] Position + color change (ghosting)
+- [X] Extreme transformations (morphing)
+- [X] Squash & stretch (volume not preserved)
 
 ---
 
@@ -266,16 +266,16 @@ def analyze_keyframes(frame1, frame2):
 
 Create these standard test cases for ongoing validation:
 
-### ✅ Should Work Well
+### [COMPLETE] Should Work Well
 1. Red ball → Red ball (same color, move)
 2. Background pan (camera movement)
 3. Character walks (consistent appearance)
 
-### ⚠️ May Have Issues
+### [WARNING] May Have Issues
 1. Character rotates 180° (suggest 90° intermediate)
 2. Object scales up (suggest size steps)
 
-### ❌ Will Produce Ghosting (Warn User)
+### [X] Will Produce Ghosting (Warn User)
 1. Red ball → Blue ball + move
 2. Day scene → Night scene + camera move
 3. Character transforms + moves

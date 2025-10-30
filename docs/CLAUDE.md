@@ -10,13 +10,13 @@
 **Name**: Vizier
 **Purpose**: Help beginner artists create smooth 2D animations by auto-generating intermediate frames between keyframes
 **Target User**: Artists using Procreate who struggle with manual inbetweening
-**Current Status**: **Model Evaluation Phase** - Phase 1 complete, evaluating alternative models (RIFE/Ebsynth) before proceeding to Phase 2
+**Current Status**: **Multi-Agent System Development** - Phase 0 complete, building intelligent principle-aware animation system
 
 ### What It Does
 1. User uploads 2 PNG keyframes with transparency (Procreate exports)
 2. User describes motion in natural language (e.g., "create 8 bouncy frames")
-3. Claude API parses instruction → structured parameters
-4. Google FILM model generates intermediate frames
+3. Multi-agent AI system analyzes motion and applies animation principles
+4. Specialized agents plan, generate, validate, and refine frames
 5. User downloads frames as ZIP → imports back to Procreate
 
 ### Animation Philosophy
@@ -28,51 +28,53 @@ Vizier supports **classic cel animation techniques** with physics-based interpol
 
 ### Completed Phases
 
-✅ **Phase 0: Environment Setup & Validation**
+[COMPLETE] **Phase 0: Environment Setup & Validation** (Archived - FILM approach)
 - FILM model validated and working
 - Claude API tested and working
 - Docker infrastructure configured
-- See [docs/PHASE_0_SUMMARY.md](./PHASE_0_SUMMARY.md) and [docs/PHASE_0_FINDINGS.md](./PHASE_0_FINDINGS.md)
+- See [docs/film/PHASE_0_SUMMARY.md](./film/PHASE_0_SUMMARY.md) and [docs/film/PHASE_0_FINDINGS.md](./film/PHASE_0_FINDINGS.md)
 
-✅ **Phase 1: Core Backend Services**
+[COMPLETE] **Phase 1: Core Backend Services** (Archived - FILM approach)
 - Built `film_service.py` with image preprocessing and FILM integration
 - Built `claude_service.py` with prompt engineering for NL parsing
 - Defined Pydantic schemas for data validation
 - Unit tests passing for both services
-- See [docs/PHASE_1_SUMMARY.md](./PHASE_1_SUMMARY.md)
+- See [docs/film/PHASE_1_SUMMARY.md](./film/PHASE_1_SUMMARY.md)
 
-### Current Status: Model Evaluation Phase
+[COMPLETE] **Phase 0: Telekinesis Multi-Agent Foundation** (NEW DIRECTION)
+- Built LangGraph-based multi-agent system
+- Created 6 specialized agent stubs (ANALYZER, PRINCIPLES, PLANNER, GENERATOR, VALIDATOR, REFINER)
+- Defined AnimationState TypedDict for agent communication
+- Implemented conditional routing and iteration logic
+- Created Animation Principles Knowledge Base (12 principles)
+- Infrastructure tests passing
+- See [docs/PHASE_0_TELEKINESIS_SUMMARY.md](./PHASE_0_TELEKINESIS_SUMMARY.md)
 
-⚠️ **PAUSE ON PHASE 2** - Model Evaluation in Progress
+### Current Status: Multi-Agent System Development
 
-Phase 0 testing revealed **critical limitations** with FILM:
-- ❌ Color + Motion = ghosting (red→blue ball shows two faint balls, no purple)
-- ❌ Object transformations = crossfading instead of motion
-- ⚠️ Only works well for same-color objects or camera pans
+**NEW APPROACH**: Principle-Aware Animation System
 
-**Current Activity**: Evaluating alternative models to find best fit
-- See [docs/MODEL_COMPARISON_PLAN.md](./MODEL_COMPARISON_PLAN.md) for research strategy
-- See [docs/PHASE_0_FINDINGS.md](./PHASE_0_FINDINGS.md) for detailed FILM analysis
+After discovering limitations with naive frame interpolation, we've pivoted to a **multi-agent architecture** that understands and applies the **12 Principles of Animation**. Instead of treating animation as a pure computer vision problem, we now treat it as an animation problem solved by specialized AI agents.
 
-**Experiment Branches**:
-- `experiment/rife` - Testing RIFE (anime-focused interpolation)
-- `experiment/ebsynth` - Testing Ebsynth (style-preserving synthesis)
-- `experiment/animatediff` - Testing AnimateDiff (diffusion-based, optional)
+**Key Innovation**: Rather than simple morphing/interpolation, the system:
+- Analyzes what's actually moving between keyframes
+- Determines which animation principles apply (arc, squash & stretch, timing, etc.)
+- Plans frame-by-frame motion incorporating these principles
+- Generates frames with structural guidance (ControlNet, pose estimation)
+- Validates quality and adherence to principles
+- Iteratively refines until quality threshold is met
 
-**Decision Point**: Once model evaluation complete, will either:
-1. Continue with FILM (accept limitations, document clearly)
-2. Switch to better model (RIFE, Ebsynth, or hybrid)
-3. Resume Phase 2 with chosen model
+**Architecture**: LangGraph-based agent loop with 6 specialized agents
+- See [docs/TELEKINESIS_PLAN.md](./TELEKINESIS_PLAN.md) for complete system design
+- See [docs/ANIMATION_PRINCIPLES_KNOWLEDGE_BASE.md](./ANIMATION_PRINCIPLES_KNOWLEDGE_BASE.md) for principle reference
 
-### On Hold Until Model Decision
+**Current Phase**: Phase 0 Complete (Infrastructure) → Moving to Phase 1 (Minimal Viable Pipeline)
 
-🔄 **Phase 2: Task Queue & Job Processing** (PAUSED)
-- Setup Celery worker with Redis
-- Implement `generate_frames` async task
-- Add progress tracking
-- Error handling and cleanup
-
-*Note: Will resume once we've decided on the interpolation model*
+**Phase 1 Goals**:
+- Implement basic Claude Vision analysis
+- Add AnimateDiff frame generation
+- End-to-end pipeline execution
+- Quality will be rough, but demonstrates agent coordination
 
 ---
 
@@ -84,12 +86,18 @@ vizier/
 │   ├── app/
 │   │   ├── main.py                    # FastAPI entry point (to be created)
 │   │   ├── services/
-│   │   │   ├── film_service.py        # ✅ FILM model wrapper + image processing
-│   │   │   └── claude_service.py      # ✅ Claude API client + prompt engineering
+│   │   │   ├── film_service.py        # [COMPLETE] FILM model wrapper + image processing
+│   │   │   └── claude_service.py      # [COMPLETE] Claude API client + prompt engineering
+│   │   ├── telekinesis/               # [COMPLETE] Multi-agent animation system
+│   │   │   ├── __init__.py            # Module exports
+│   │   │   ├── state.py               # [COMPLETE] AnimationState TypedDict
+│   │   │   ├── agents.py              # [COMPLETE] 6 agent stub functions
+│   │   │   ├── graph.py               # [COMPLETE] LangGraph StateGraph with routing
+│   │   │   └── logging_config.py      # [COMPLETE] Logging configuration
 │   │   ├── workers/
 │   │   │   └── celery_worker.py       # Async task: generate_frames() (to be created)
 │   │   ├── models/
-│   │   │   └── schemas.py             # ✅ Pydantic models (AnimationParams, JobStatus)
+│   │   │   └── schemas.py             # [COMPLETE] Pydantic models (AnimationParams, JobStatus)
 │   │   └── routers/
 │   │       └── generation.py          # API endpoints (to be created)
 │   ├── Dockerfile
@@ -112,15 +120,19 @@ vizier/
 ├── models/
 │   └── film/                          # Google FILM repo (cloned, gitignored)
 │
-├── docs/                              # 📁 Documentation
+├── docs/                              # Documentation
 │   ├── CLAUDE.md                      # This file - AI assistant context
-│   ├── MODEL_COMPARISON_PLAN.md       # Model evaluation research plan
-│   ├── ANIMATION_STYLE.md             # Animation principles and testing strategy
-│   ├── PHASE_0_SUMMARY.md             # Phase 0 results
-│   ├── PHASE_0_FINDINGS.md            # FILM behavior analysis
-│   └── PHASE_1_SUMMARY.md             # Phase 1 results
+│   ├── TELEKINESIS_PLAN.md            # [COMPLETE] CURRENT: Multi-agent system design and roadmap
+│   ├── ANIMATION_PRINCIPLES_KNOWLEDGE_BASE.md  # [COMPLETE] CURRENT: 12 principles reference for agents
+│   ├── PHASE_0_TELEKINESIS_SUMMARY.md # [COMPLETE] CURRENT: Phase 0 multi-agent infrastructure
+│   ├── ANIMATION_STYLE.md             # [COMPLETE] CURRENT: Animation principles and testing strategy
+│   └── film/                          # OLD: Previous FILM-based approach (archived)
+│       ├── MODEL_COMPARISON_PLAN.md   # Model evaluation research (archived)
+│       ├── PHASE_0_SUMMARY.md         # FILM validation results (archived)
+│       ├── PHASE_0_FINDINGS.md        # FILM behavior analysis (archived)
+│       └── PHASE_1_SUMMARY.md         # Services implementation (archived)
 │
-├── tests/                             # 📁 All test files
+├── tests/                             # All test files
 │   ├── test_film_setup.py             # FILM validation script
 │   ├── test_film_with_images.py       # FILM + transparency test
 │   ├── test_claude_api.py             # Claude API test
@@ -148,10 +160,12 @@ vizier/
 ### Backend
 - **Framework**: FastAPI (Python 3.10+)
 - **Task Queue**: Celery + Redis
+- **Multi-Agent System**: LangGraph + LangChain
 - **AI Models**:
-  - **Interpolation**: FILM (current), evaluating RIFE/Ebsynth alternatives
-  - **NL Parsing**: Claude API (`claude-sonnet-4-5-20250929`)
-- **Image Processing**: Pillow, OpenCV, NumPy
+  - **Analysis & Reasoning**: Claude API (`claude-sonnet-4-5-20250929`)
+  - **Frame Generation**: AnimateDiff (planned), ControlNet guidance
+  - **Style Transfer**: Ebsynth (planned for refinement)
+- **Image Processing**: Pillow, OpenCV, NumPy, MediaPipe (planned)
 
 ### Frontend
 - **Framework**: Next.js 14 + React 18 + TypeScript
@@ -162,6 +176,253 @@ vizier/
 - **Containerization**: Docker + Docker Compose
 - **Storage**: Local filesystem (uploads/, outputs/)
 - **Cache**: Redis 7
+
+---
+
+## Documentation Organization
+
+**IMPORTANT**: The Vizier project has evolved through multiple approaches:
+
+### Current Implementation (Top-Level Docs)
+The following documents represent the **CURRENT** multi-agent system approach and should be followed for all development:
+- **[TELEKINESIS_PLAN.md](./TELEKINESIS_PLAN.md)** - Complete system design and roadmap
+- **[ANIMATION_PRINCIPLES_KNOWLEDGE_BASE.md](./ANIMATION_PRINCIPLES_KNOWLEDGE_BASE.md)** - 12 principles reference
+- **[PHASE_0_TELEKINESIS_SUMMARY.md](./PHASE_0_TELEKINESIS_SUMMARY.md)** - Current phase status
+- **[ANIMATION_STYLE.md](./ANIMATION_STYLE.md)** - Animation philosophy and testing strategy
+
+### Archived Approaches (docs/film/)
+The `docs/film/` directory contains documentation from a previous FILM-based interpolation approach that was **discontinued** due to technical limitations. These documents are archived for reference only:
+- [FAILED] `film/MODEL_COMPARISON_PLAN.md` - Old model evaluation plan (not current)
+- [FAILED] `film/PHASE_0_SUMMARY.md` - FILM validation (archived)
+- [FAILED] `film/PHASE_0_FINDINGS.md` - FILM limitations analysis (archived)
+- [FAILED] `film/PHASE_1_SUMMARY.md` - Old service implementation (archived)
+
+**For AI Assistants**: Only implement features and follow plans from **top-level documentation**. Files in `docs/film/` are for historical reference only and should NOT guide current development.
+
+---
+
+## Multi-Agent System Architecture (Telekinesis)
+
+### Overview
+
+The Telekinesis system is a LangGraph-based multi-agent architecture that applies the **12 Principles of Animation** to generate intermediate frames. Rather than naive interpolation, specialized AI agents analyze, plan, generate, validate, and refine frames with deep understanding of animation fundamentals.
+
+**Core Philosophy**: Treat animation as an animation problem, not just a computer vision problem.
+
+### The 6 Agents
+
+#### 1. ANALYZER Agent
+**Purpose**: Understand what's changing between keyframes
+
+**Responsibilities**:
+- Visual analysis using Claude Vision
+- Motion type detection (rotation, translation, deformation)
+- Object segmentation and part identification
+- Pose detection (MediaPipe for characters)
+- Style analysis (line art, cel-shaded, realistic)
+- Volume and structure measurement
+
+**Output**: Analysis dictionary with motion characteristics, detected objects, and style information
+
+#### 2. PRINCIPLES Agent
+**Purpose**: Determine which of the 12 animation principles apply
+
+**Responsibilities**:
+- Analyze motion to identify relevant principles (arc, squash & stretch, timing, etc.)
+- Assign confidence scores to each applicable principle
+- Extract principle-specific parameters
+- Reference Animation Principles Knowledge Base
+
+**Output**: List of applicable principles with confidence scores, parameters, and reasoning
+
+**The 12 Principles**:
+1. Squash and Stretch
+2. Anticipation
+3. Staging
+4. Straight Ahead Action and Pose to Pose
+5. Follow Through and Overlapping Action
+6. Slow In and Slow Out
+7. Arc
+8. Secondary Action
+9. Timing
+10. Exaggeration
+11. Solid Drawing
+12. Appeal
+
+See [ANIMATION_PRINCIPLES_KNOWLEDGE_BASE.md](./ANIMATION_PRINCIPLES_KNOWLEDGE_BASE.md) for details.
+
+#### 3. PLANNER Agent
+**Purpose**: Create detailed frame-by-frame generation plan
+
+**Responsibilities**:
+- Generate timing curves based on principles (ease-in, ease-out, custom)
+- Calculate arc paths for natural motion
+- Plan deformation schedules (squash/stretch per frame)
+- Design motion layers for overlapping action
+- Determine ControlNet strategy (pose, line art, depth)
+- Ensure volume preservation constraints
+
+**Output**: Frame schedule with interpolation parameters, timing curves, and generation strategy
+
+#### 4. GENERATOR Agent
+**Purpose**: Create intermediate frames using generative models
+
+**Responsibilities**:
+- Execute AnimateDiff with ControlNet guidance
+- Apply frame-by-frame deformations
+- Generate motion layers separately for overlapping action
+- Composite layers with timing offsets
+- Preserve transparency from original keyframes
+
+**Output**: List of generated frame image paths
+
+#### 5. VALIDATOR Agent
+**Purpose**: Assess quality and principle adherence
+
+**Responsibilities**:
+- Quality assessment using Claude Vision
+- Volume consistency checking (OpenCV)
+- Motion smoothness analysis (optical flow)
+- Principle adherence validation (does motion follow planned arc?)
+- Style consistency checking (CLIP/DINO features)
+- Artifact detection (morphing, ghosting, distortion)
+
+**Output**: Quality score (0-10), principle adherence scores, detected issues, refinement suggestions
+
+**Routing Logic**:
+- Quality ≥ 8.0 → END (success)
+- Quality < 6.0 and iteration < 2 → REPLAN
+- Quality ≥ 6.0 and iteration < 3 → REFINE
+- Iteration ≥ 3 → END (accept best effort)
+
+#### 6. REFINER Agent
+**Purpose**: Fix specific issues identified by validator
+
+**Responsibilities**:
+- Ebsynth style transfer for consistency
+- Inpainting for problem regions
+- Temporal smoothing to reduce flicker
+- Volume normalization
+- Line art cleanup and weight adjustment
+- Enhance subtle effects (squash/stretch, motion blur)
+
+**Output**: List of refined frame image paths
+
+### Agent Flow Diagram
+
+```
+START
+  ↓
+[ANALYZER] → analysis
+  ↓           (What's moving? How?)
+[PRINCIPLES] → animation_principles
+  ↓             (Which principles apply?)
+[PLANNER] → plan
+  ↓          (Frame-by-frame motion plan)
+[GENERATOR] → frames
+  ↓            (Generate images)
+[VALIDATOR] → validation
+  ↓            (Quality check)
+  ├─ quality ≥ 8.0 → END [DONE]
+  ├─ quality ≥ 6.0 → [REFINER] → refined_frames → [VALIDATOR]
+  └─ quality < 6.0 → [PLANNER] (re-plan)
+```
+
+### AnimationState
+
+The state container passed between agents:
+
+```python
+class AnimationState(TypedDict):
+    # Input
+    keyframe1: str
+    keyframe2: str
+    instruction: str
+
+    # Agent outputs
+    analysis: dict
+    animation_principles: dict
+    plan: dict
+    frames: List[str]
+    validation: dict
+    refined_frames: List[str]
+
+    # Control flow
+    iteration_count: int
+    messages: List[dict]
+```
+
+See `backend/app/telekinesis/state.py` for full definition.
+
+### Integration with Vizier
+
+The Telekinesis system integrates into Vizier's Celery worker:
+
+```python
+@celery_app.task(bind=True)
+def generate_frames_advanced(self, job_id, kf1, kf2, instruction):
+    """Advanced generation using Telekinesis agent loop"""
+
+    graph = build_telekinesis_graph()
+
+    initial_state = {
+        "keyframe1": kf1,
+        "keyframe2": kf2,
+        "instruction": instruction,
+        "iteration_count": 0,
+        "messages": []
+    }
+
+    # Stream execution with progress updates
+    for state in graph.stream(initial_state):
+        current_agent = list(state.keys())[0]
+        self.update_state(
+            state='PROGRESS',
+            meta={'agent': current_agent, 'progress': calculate_progress(state)}
+        )
+
+    return state.get("refined_frames") or state.get("frames")
+```
+
+### Development Phases
+
+**Phase 0: Foundation** [COMPLETE] COMPLETE
+- LangGraph infrastructure
+- Agent stubs
+- State management
+- Animation Principles Knowledge Base
+
+**Phase 1: Minimal Viable Pipeline** [IN PROGRESS] NEXT
+- Claude Vision analysis
+- Hardcoded principles
+- Simple linear planning
+- AnimateDiff generation (no ControlNet)
+- Stub validator (always passes)
+
+**Phase 2: Add Vision Analysis**
+- Real motion analysis
+- Claude-based principle detection
+- Incorporate principles into planning
+
+**Phase 3: Add ControlNet Guidance**
+- Structural control (pose + line art)
+- Arc path calculations
+- Timing curves
+
+**Phase 4: Add Validation Loop**
+- Real quality checking
+- Refiner implementation
+- Iterative improvement
+
+**Phase 5: Advanced Principles**
+- Squash/stretch deformation
+- Overlapping action (motion layers)
+- Full principle integration
+
+**Phase 6: Optimization**
+- Caching
+- Parallel processing
+- Cost reduction
 
 ---
 
@@ -276,12 +537,12 @@ Return to frontend (preview + download)
 - Handle errors and cleanup
 - Run single-threaded (concurrency=1 for CPU)
 
-**Claude Service:** ✅ IMPLEMENTED
+**Claude Service:** [COMPLETE] IMPLEMENTED
 - Parse natural language instructions
 - Extract structured parameters (frame count, motion type, timing curve)
 - Return JSON with animation specifications
 
-**FILM Service:** ✅ IMPLEMENTED
+**FILM Service:** [COMPLETE] IMPLEMENTED
 - Preprocess images (resize, even dimensions, format conversion)
 - Execute FILM model
 - Handle recursive frame generation
@@ -323,7 +584,7 @@ Return to frontend (preview + download)
 
 ## Data Schemas
 
-### AnimationParams (Claude Output) ✅ IMPLEMENTED
+### AnimationParams (Claude Output) [COMPLETE] IMPLEMENTED
 ```python
 {
     "num_frames": int,           # 4-32
@@ -334,7 +595,7 @@ Return to frontend (preview + download)
 }
 ```
 
-### JobStatus (API Response) ✅ IMPLEMENTED
+### JobStatus (API Response) [COMPLETE] IMPLEMENTED
 ```python
 {
     "job_id": str,               # UUID4
@@ -481,51 +742,73 @@ API_URL=http://localhost:8000        # Backend URL
 
 ## Development Phases
 
-### Phase 0: Environment Setup ✅ COMPLETE
+### Phase 0: Environment Setup [COMPLETE] COMPLETE (Archived - FILM approach)
 - Project structure created
 - FILM model tested and working
 - Claude API tested and working
 - Docker infrastructure configured
+- See [docs/film/PHASE_0_SUMMARY.md](./film/PHASE_0_SUMMARY.md)
 
-### Phase 1: Core Backend Services ✅ COMPLETE
+### Phase 1: Core Backend Services [COMPLETE] COMPLETE (Archived - FILM approach)
 - Built `film_service.py` with image preprocessing
 - Built `claude_service.py` with prompt engineering
 - Defined Pydantic schemas
 - Unit tested both services
+- See [docs/film/PHASE_1_SUMMARY.md](./film/PHASE_1_SUMMARY.md)
 
-### Phase 2: Task Queue & Job Processing 🔄 NEXT
-- Setup Celery worker
-- Implement `generate_frames` task
-- Add progress tracking in Redis
-- Error handling and cleanup
+### Phase 0: Telekinesis Multi-Agent Foundation [COMPLETE] COMPLETE (NEW)
+- LangGraph infrastructure setup
+- 6 agent stubs created (ANALYZER, PRINCIPLES, PLANNER, GENERATOR, VALIDATOR, REFINER)
+- AnimationState TypedDict defined
+- Conditional routing and iteration logic implemented
+- Animation Principles Knowledge Base created
+- Infrastructure tests passing
 
-### Phase 3: FastAPI HTTP Layer
+### Phase 1: Telekinesis Minimal Viable Pipeline [IN PROGRESS] NEXT (NEW)
+- Implement Claude Vision analysis in ANALYZER
+- Keep hardcoded principles in PRINCIPLES agent
+- Simple linear planning in PLANNER
+- AnimateDiff generation (no ControlNet yet)
+- Stub validator (always passes)
+- Goal: End-to-end execution with rough quality
+
+### Phase 2: Telekinesis Vision Analysis (NEW)
+- Real motion analysis
+- Claude-based principle detection
+- Incorporate principles into planning
+- Goal: Intelligent principle identification
+
+### Phase 3: Telekinesis ControlNet Guidance (NEW)
+- Structural control (pose + line art)
+- Arc path calculations
+- Timing curves
+- Goal: Frames maintain structure and follow natural motion
+
+### Phase 4: Telekinesis Validation Loop (NEW)
+- Real quality checking
+- Refiner implementation
+- Iterative improvement
+- Goal: Self-correcting system with high quality output
+
+### Phase 5: Telekinesis Advanced Principles (NEW)
+- Squash/stretch deformation
+- Overlapping action (motion layers)
+- Full principle integration
+- Goal: Professional quality animation
+
+### Phase 6: Telekinesis Optimization (NEW)
+- Caching
+- Parallel processing
+- Cost reduction
+- Goal: Production-ready performance
+
+### Future Phases: FastAPI HTTP Layer & Frontend
 - Create FastAPI app with CORS
 - Build `/api/generate`, `/api/jobs/{id}`, `/api/frames`, `/api/download`
 - File upload validation
-- ZIP generation
-
-### Phase 4: Frontend Foundation
 - Setup Next.js + TailwindCSS
-- Build 4 main components (Uploader, Input, Timeline, Download)
-- Mock data testing
-
-### Phase 5: Frontend-Backend Integration
-- Build API client (`api.ts`)
-- Build job polling hook (`useJobStatus.ts`)
+- Build frontend components
 - Wire up complete user flow
-
-### Phase 6: Polish & Error Handling
-- User-friendly errors
-- Loading states and animations
-- Keyboard shortcuts
-- Documentation
-
-### Phase 7: Testing & Cleanup
-- End-to-end testing
-- Cleanup scripts (24h TTL)
-- Performance testing
-- Security audit
 
 ---
 
@@ -541,6 +824,7 @@ API_URL=http://localhost:8000        # Backend URL
 - **Clear comments**: Explain "why" not "what" - code should be self-documenting
 - **Type hints**: Use Python type hints and TypeScript types everywhere
 - **Error handling**: Use specific exceptions with clear messages
+- **No emojis**: NEVER use emojis in code, comments, or documentation - use text markers instead ([COMPLETE], [IN PROGRESS], [WARNING], [FAILED], [X], [DONE])
 
 **Python Style:**
 - Follow PEP 8 style guide
@@ -576,23 +860,23 @@ API_URL=http://localhost:8000        # Backend URL
 **IMPORTANT: Do NOT commit changes automatically**
 
 When you make changes:
-1. ✅ Use `git add` to stage files
-2. ✅ Show the user what will be committed with `git status` and `git diff --staged`
-3. ❌ **NEVER** run `git commit` yourself
-4. ❌ **NEVER** run `git push` yourself
-5. ⏸️ **WAIT** for the user to review and commit manually
+1. [COMPLETE] Use `git add` to stage files
+2. [COMPLETE] Show the user what will be committed with `git status` and `git diff --staged`
+3. [FAILED] **NEVER** run `git commit` yourself
+4. [FAILED] **NEVER** run `git push` yourself
+5. **WAIT** for the user to review and commit manually
 
 **Example workflow:**
 ```bash
-# ✅ Stage changes
+# [COMPLETE] Stage changes
 git add backend/app/services/new_service.py
 git add backend/app/models/schemas.py
 
-# ✅ Show what will be committed
+# [COMPLETE] Show what will be committed
 git status
 git diff --staged
 
-# ⏸️ STOP HERE - tell user:
+# STOP HERE - tell user:
 # "I've staged the changes. Please review with 'git diff --staged'
 # and commit when ready."
 ```
@@ -682,14 +966,16 @@ npm run dev  # Starts on http://localhost:3000
 ## Notes for AI Assistants
 
 1. **Always read this file first** when starting work on this project
-2. **Check [docs/ANIMATION_STYLE.md](./ANIMATION_STYLE.md)** for animation principles
-3. **Review phase summaries** in docs/ to understand what's been completed
-4. **Use test scripts** to validate changes (tests/test_*.py)
-5. **Follow the development phases** - don't skip ahead
-6. **Stage changes but don't commit** - let the user review and commit
-7. **Ask for clarification** if requirements are ambiguous
-8. **Update documentation** when making significant changes
+2. **IMPORTANT: Only follow top-level docs** - Files in `docs/film/` are archived and NOT current
+3. **Current system design**: See [TELEKINESIS_PLAN.md](./TELEKINESIS_PLAN.md) and [PHASE_0_TELEKINESIS_SUMMARY.md](./PHASE_0_TELEKINESIS_SUMMARY.md)
+4. **Check [docs/ANIMATION_STYLE.md](./ANIMATION_STYLE.md)** for animation principles
+5. **Use test scripts** to validate changes (tests/test_*.py)
+6. **Follow the Telekinesis development phases** (Phase 0-6) - don't skip ahead
+7. **Stage changes but don't commit** - let the user review and commit
+8. **Ask for clarification** if requirements are ambiguous
+9. **Update documentation** when making significant changes
+10. **NEVER use emojis** - Use text markers: [COMPLETE], [IN PROGRESS], [WARNING], [FAILED], [X], [DONE]
 
 ---
 
-**Last Updated**: Model Evaluation Phase - October 27, 2025
+**Last Updated**: Multi-Agent System Development (Phase 0 Complete) - October 30, 2025

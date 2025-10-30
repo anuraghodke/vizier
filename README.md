@@ -1,7 +1,7 @@
 # Vizier - AI-Assisted 2D Animation Inbetweening Tool
 
 ## Overview
-Vizier helps artists create smooth 2D animations by auto-generating intermediate frames between keyframes. Designed for artists working with tools like Procreate who want to achieve old-school cel animation quality with modern AI assistance.
+Vizier helps artists create smooth 2D animations by auto-generating intermediate frames between keyframes using AI that understands animation principles. Designed for artists working with tools like Procreate who want to achieve old-school cel animation quality with modern AI assistance.
 
 ## Animation Style Philosophy
 
@@ -33,14 +33,15 @@ For more details, see [ANIMATION_STYLE.md](docs/ANIMATION_STYLE.md).
 
 - Upload 2 PNG keyframes with transparency
 - Describe motion in natural language (e.g., "create 8 bouncy frames")
-- AI-powered frame interpolation using Google's FILM model
+- Intelligent AI system that understands animation principles (timing, arcs, squash & stretch, etc.)
+- Quality validation and iterative refinement for better results
 - Download frames as ZIP for import into Procreate or other animation tools
 
 ## Tech Stack
 
-- **Backend**: FastAPI, Celery, Redis, TensorFlow (FILM model)
+- **Backend**: FastAPI, Celery, Redis, LangGraph (Multi-agent system)
 - **Frontend**: Next.js, React, TypeScript, TailwindCSS
-- **AI**: Google FILM (Frame Interpolation for Large Motion), Claude API
+- **AI**: Claude API (Analysis & reasoning), AnimateDiff (Frame generation), ControlNet (Structure guidance)
 - **Infrastructure**: Docker Compose
 
 ## Quick Start
@@ -77,9 +78,11 @@ docker-compose up -d
 # Activate virtual environment
 source .venv/bin/activate
 
-# Test FILM model
-python tests/test_film_setup.py
-python tests/test_film_with_images.py
+# Test multi-agent system structure
+python tests/verify_phase0_structure.py
+
+# Test multi-agent system (requires dependencies installed)
+python tests/test_telekinesis_phase0.py
 
 # Test Claude API (requires ANTHROPIC_API_KEY in .env)
 python tests/test_claude_api.py
