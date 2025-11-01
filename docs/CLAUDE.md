@@ -29,17 +29,17 @@ Vizier supports **classic cel animation techniques** with physics-based interpol
 ### Completed Phases
 
 [COMPLETE] **Phase 0: Environment Setup & Validation** (Archived - FILM approach)
-- FILM model validated and working
+- FILM model validated and working (archived approach)
 - Claude API tested and working
 - Docker infrastructure configured
 - See [docs/film/PHASE_0_SUMMARY.md](./film/PHASE_0_SUMMARY.md) and [docs/film/PHASE_0_FINDINGS.md](./film/PHASE_0_FINDINGS.md)
 
 [COMPLETE] **Phase 1: Core Backend Services** (Archived - FILM approach)
-- Built `film_service.py` with image preprocessing and FILM integration
 - Built `claude_service.py` with prompt engineering for NL parsing
 - Defined Pydantic schemas for data validation
-- Unit tests passing for both services
-- See [docs/film/PHASE_1_SUMMARY.md](./film/PHASE_1_SUMMARY.md)
+- Unit tests passing for Claude service
+- Note: FILM service was discontinued in favor of Telekinesis agent loop
+- See [docs/film/PHASE_1_SUMMARY.md](./film/PHASE_1_SUMMARY.md) for historical reference
 
 [COMPLETE] **Phase 0: Telekinesis Multi-Agent Foundation** (NEW DIRECTION)
 - Built LangGraph-based multi-agent system
@@ -86,8 +86,9 @@ vizier/
 │   ├── app/
 │   │   ├── main.py                    # FastAPI entry point (to be created)
 │   │   ├── services/
-│   │   │   ├── film_service.py        # [COMPLETE] FILM model wrapper + image processing
-│   │   │   └── claude_service.py      # [COMPLETE] Claude API client + prompt engineering
+│   │   │   ├── claude_service.py      # [COMPLETE] Claude API client + prompt engineering
+│   │   │   ├── claude_vision_service.py  # [COMPLETE] Claude Vision for image analysis
+│   │   │   └── frame_generator_service.py  # [COMPLETE] Object-based frame interpolation
 │   │   ├── telekinesis/               # [COMPLETE] Multi-agent animation system
 │   │   │   ├── __init__.py            # Module exports
 │   │   │   ├── state.py               # [COMPLETE] AnimationState TypedDict
@@ -117,8 +118,7 @@ vizier/
 │   │   └── api.ts                     # Axios API client (to be created)
 │   └── package.json
 │
-├── models/
-│   └── film/                          # Google FILM repo (cloned, gitignored)
+├── models/                            # Model storage (optional, for future use)
 │
 ├── docs/                              # Documentation
 │   ├── CLAUDE.md                      # This file - AI assistant context
@@ -133,13 +133,13 @@ vizier/
 │       └── PHASE_1_SUMMARY.md         # Services implementation (archived)
 │
 ├── tests/                             # All test files
-│   ├── test_film_setup.py             # FILM validation script
-│   ├── test_film_with_images.py       # FILM + transparency test
 │   ├── test_claude_api.py             # Claude API test
-│   ├── test_services.py               # Service unit tests
-│   ├── test_physics_interpolation.py  # Physics-based motion tests
-│   ├── test_physics_with_background.py
-│   ├── test_same_color_motion.py
+│   ├── test_services.py               # Service unit tests (Claude service)
+│   ├── test_telekinesis_phase0.py     # Telekinesis infrastructure tests
+│   ├── test_telekinesis_phase1.py     # Telekinesis agent loop tests
+│   ├── test_physics_interpolation.py  # Physics-based motion tests (archived)
+│   ├── test_physics_with_background.py  # Background tests (archived)
+│   ├── test_same_color_motion.py     # Motion tests (archived)
 │   ├── test_images/                   # Test assets
 │   └── test_output/                   # Generated test outputs
 │
@@ -426,36 +426,21 @@ def generate_frames_advanced(self, job_id, kf1, kf2, instruction):
 
 ---
 
-## Key Technical Findings (Phase 0)
+## Key Technical Findings
 
-### FILM Model Behavior
-- **Source**: TensorFlow Hub (`https://tfhub.dev/google/film/1`)
-- **Input Format**: Dictionary with keys `{'x0': tensor, 'x1': tensor, 'time': [[t]]}`
-- **Output**: `result['image'][0]` - interpolated frame as numpy array
-- **Image Format**: RGB only (0.0-1.0 range, sometimes slightly outside)
-- **Performance**: ~2-3 seconds per frame on CPU (M-series Mac)
-- **Limitations**:
-  - Generates 2^n-1 frames recursively (can't request exact count)
-  - Requires even dimensions (width/height divisible by 2)
-  - No alpha channel support (must handle separately)
+### Telekinesis Agent Loop (Current Implementation)
+- **Framework**: LangGraph + LangChain
+- **Architecture**: 6 specialized agents (ANALYZER, PRINCIPLES, PLANNER, GENERATOR, VALIDATOR, REFINER)
+- **State Management**: AnimationState TypedDict passed between agents
+- **Routing**: Conditional routing based on validation quality scores
+- **Current Phase**: Phase 0 Complete (Infrastructure), Phase 1 In Progress
 
-### Transparency Handling
-**Critical**: FILM only processes RGB channels. Alpha must be separated before processing and interpolated independently.
-
-```python
-# Separate alpha before FILM
-rgb = np.array(pil_img.convert('RGB')).astype(np.float32) / 255.0
-alpha = np.array(pil_img.split()[3]).astype(np.float32) / 255.0
-
-# Interpolate RGB with FILM
-result = model({'x0': rgb_batch, 'x1': rgb_batch2, 'time': [[t]]})
-
-# Interpolate alpha linearly
-alpha_interpolated = (1 - t) * alpha1 + t * alpha2
-
-# Recombine
-rgba = np.dstack([rgb_output * 255, alpha_interpolated * 255])
-```
+### FrameGeneratorService (Phase 1)
+- **Approach**: Object-based motion interpolation
+- **Method**: Color-based segmentation to detect objects
+- **Interpolation**: Position and color interpolation with easing curves
+- **Limitations**: Works best with simple objects, will enhance with AnimateDiff in future phases
+- **Transparency**: Full RGBA support, preserves alpha channel
 
 ### Claude API
 - **Model**: `claude-sonnet-4-5-20250929`
@@ -542,12 +527,17 @@ Return to frontend (preview + download)
 - Extract structured parameters (frame count, motion type, timing curve)
 - Return JSON with animation specifications
 
-**FILM Service:** [COMPLETE] IMPLEMENTED
-- Preprocess images (resize, even dimensions, format conversion)
-- Execute FILM model
-- Handle recursive frame generation
-- Select appropriate frames based on timing parameters
-- Preserve alpha channel (transparency)
+**FrameGeneratorService:** [COMPLETE] IMPLEMENTED
+- Object-based motion interpolation
+- Detects objects using color segmentation
+- Interpolates object position and color
+- Renders objects at intermediate states
+- Preserves transparency (alpha channel)
+
+**Telekinesis Agent Loop:** [IN PROGRESS] Phase 0 Complete, Phase 1 In Progress
+- Multi-agent system with 6 specialized agents
+- Applies 12 Principles of Animation
+- See [docs/TELEKINESIS_PLAN.md](./TELEKINESIS_PLAN.md) for details
 
 **Frontend:**
 - Provide drag-and-drop file upload
@@ -620,15 +610,27 @@ def generate_frames(self, job_id, frame1_path, frame2_path, instruction):
     params = claude_service.parse_instruction(instruction)
     update_status(job_id, "analyzing", 20)
 
-    # Stage 2: Preprocessing (30-40%)
-    update_status(job_id, "preprocessing", 30)
-    rgb1, alpha1, rgb2, alpha2 = film_service.preprocess(frame1_path, frame2_path)
-    update_status(job_id, "preprocessing", 40)
-
-    # Stage 3: Generating (50-70%)
-    update_status(job_id, "generating", 50)
-    frames = film_service.interpolate(rgb1, rgb2, alpha1, alpha2, params)
-    update_status(job_id, "generating", 70)
+    # Stage 2: Agent Loop Execution (30-90%)
+    update_status(job_id, "analyzing", 30)
+    # Build Telekinesis graph and execute agent loop
+    graph = build_telekinesis_graph()
+    initial_state = create_initial_state(
+        keyframe1=frame1_path,
+        keyframe2=frame2_path,
+        instruction=instruction,
+        job_id=job_id
+    )
+    
+    # Stream execution with progress updates
+    for state_update in graph.stream(initial_state):
+        current_agent = list(state_update.keys())[0]
+        progress = calculate_agent_progress(current_agent)
+        update_status(job_id, f"agent_{current_agent}", progress)
+    
+    # Extract final frames from state
+    final_state = state_update
+    frames = final_state.get("refined_frames") or final_state.get("frames", [])
+    update_status(job_id, "generating", 90)
 
     # Stage 4: Saving (80-90%)
     update_status(job_id, "generating", 80)
@@ -651,7 +653,6 @@ def generate_frames(self, job_id, frame1_path, frame2_path, instruction):
 ### Shared Volumes
 - `./uploads:/app/uploads` - Uploaded keyframes
 - `./outputs:/app/outputs` - Generated frames
-- `./models/film:/models/film:ro` - FILM model (read-only)
 
 ### Environment Variables
 ```bash
@@ -742,19 +743,18 @@ API_URL=http://localhost:8000        # Backend URL
 
 ## Development Phases
 
-### Phase 0: Environment Setup [COMPLETE] COMPLETE (Archived - FILM approach)
+### Phase 0: Environment Setup [COMPLETE] (Archived - FILM approach)
 - Project structure created
-- FILM model tested and working
 - Claude API tested and working
 - Docker infrastructure configured
-- See [docs/film/PHASE_0_SUMMARY.md](./film/PHASE_0_SUMMARY.md)
+- See [docs/film/PHASE_0_SUMMARY.md](./film/PHASE_0_SUMMARY.md) for historical reference
 
-### Phase 1: Core Backend Services [COMPLETE] COMPLETE (Archived - FILM approach)
-- Built `film_service.py` with image preprocessing
+### Phase 1: Core Backend Services [COMPLETE] (Archived - FILM approach)
 - Built `claude_service.py` with prompt engineering
 - Defined Pydantic schemas
-- Unit tested both services
-- See [docs/film/PHASE_1_SUMMARY.md](./film/PHASE_1_SUMMARY.md)
+- Unit tested Claude service
+- Note: FILM service discontinued in favor of Telekinesis
+- See [docs/film/PHASE_1_SUMMARY.md](./film/PHASE_1_SUMMARY.md) for historical reference
 
 ### Phase 0: Telekinesis Multi-Agent Foundation [COMPLETE] COMPLETE (NEW)
 - LangGraph infrastructure setup
@@ -919,9 +919,10 @@ docker-compose restart backend
 # Stop all
 docker-compose down
 
-# Test FILM
+# Test Telekinesis
 source .venv/bin/activate
-python tests/test_film_setup.py
+python tests/test_telekinesis_phase0.py
+python tests/test_telekinesis_phase1.py
 
 # Test Claude
 export ANTHROPIC_API_KEY="..."
@@ -954,8 +955,8 @@ npm run dev  # Starts on http://localhost:3000
 
 ## Quick Reference Links
 
-- **FILM GitHub**: https://github.com/google-research/frame-interpolation
-- **FILM TF Hub**: https://tfhub.dev/google/film/1
+- **LangGraph Docs**: https://langchain-ai.github.io/langgraph/
+- **LangChain Docs**: https://python.langchain.com/
 - **Claude API Docs**: https://docs.anthropic.com
 - **FastAPI Docs**: https://fastapi.tiangolo.com
 - **Celery Docs**: https://docs.celeryproject.org
