@@ -18,8 +18,8 @@ from pathlib import Path
 backend_dir = Path(__file__).parent.parent / "backend"
 sys.path.insert(0, str(backend_dir))
 
-from app.telekinesis.graph import build_telekinesis_graph
-from app.telekinesis.state import AnimationState
+from backend.app.telekinesis.graph import build_telekinesis_graph
+from backend.app.telekinesis.state import AnimationState
 
 
 def test_phase1_pipeline():
