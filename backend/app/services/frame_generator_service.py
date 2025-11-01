@@ -1,7 +1,11 @@
 """
 Frame generation service for Telekinesis system.
 
-Phase 1: Simple linear interpolation (blending)
+Phase 1: Object-based motion interpolation
+- Detects objects using color segmentation
+- Interpolates object position and color
+- Renders objects at intermediate states
+
 Future phases will integrate:
 - AnimateDiff for motion-aware generation
 - ControlNet for structural guidance
@@ -10,8 +14,9 @@ Future phases will integrate:
 import os
 import numpy as np
 from pathlib import Path
-from PIL import Image
-from typing import List, Dict, Any, Optional
+from PIL import Image, ImageDraw
+from typing import List, Dict, Any, Optional, Tuple
+import cv2
 import logging
 
 logger = logging.getLogger(__name__)
@@ -21,7 +26,11 @@ class FrameGeneratorService:
     """
     Service for generating intermediate frames between keyframes.
 
-    Phase 1: Uses simple alpha-blending interpolation
+    Phase 1: Object-based motion interpolation
+    - Detects moving objects
+    - Interpolates position and color
+    - Renders clean frames with objects in motion
+
     Phase 2+: Will integrate AnimateDiff, ControlNet, etc.
     """
 
@@ -77,45 +86,162 @@ class FrameGeneratorService:
         img.save(output_path, format="PNG")
         logger.debug(f"Saved frame: {output_path}")
 
-    def _interpolate_linear(
+    def _detect_object(self, image: np.ndarray) -> Optional[Dict[str, Any]]:
+        """
+        Detect primary moving object using color-based segmentation.
+
+        Args:
+            image: RGBA numpy array (H, W, 4)
+
+        Returns:
+            Dict with object properties:
+                - mask: Binary mask of object (H, W)
+                - centroid: (x, y) center position
+                - color: (r, g, b) average color
+                - bbox: (x1, y1, x2, y2) bounding box
+                - contour: Largest contour points
+            or None if no object detected
+        """
+        # Convert to RGB for processing (ignore alpha initially)
+        rgb = image[:, :, :3]
+        alpha = image[:, :, 3]
+
+        # Create mask based on non-transparent pixels
+        # Threshold: alpha > 10 (mostly opaque)
+        alpha_mask = alpha > 10
+
+        # Also exclude near-white background pixels
+        # White threshold: all channels > 240
+        white_mask = np.all(rgb > 240, axis=2)
+
+        # Object mask = opaque AND not white
+        object_mask = alpha_mask & ~white_mask
+
+        # Clean up mask with morphological operations
+        kernel = np.ones((3, 3), np.uint8)
+        object_mask = cv2.morphologyEx(
+            object_mask.astype(np.uint8),
+            cv2.MORPH_CLOSE,
+            kernel
+        )
+        object_mask = cv2.morphologyEx(
+            object_mask.astype(np.uint8),
+            cv2.MORPH_OPEN,
+            kernel
+        )
+
+        # Find contours
+        contours, _ = cv2.findContours(
+            object_mask.astype(np.uint8),
+            cv2.RETR_EXTERNAL,
+            cv2.CHAIN_APPROX_SIMPLE
+        )
+
+        if not contours:
+            logger.warning("No object detected in image")
+            return None
+
+        # Get largest contour
+        largest_contour = max(contours, key=cv2.contourArea)
+
+        # Calculate centroid
+        M = cv2.moments(largest_contour)
+        if M["m00"] == 0:
+            return None
+
+        cx = int(M["m10"] / M["m00"])
+        cy = int(M["m01"] / M["m00"])
+
+        # Get bounding box
+        x1, y1, w, h = cv2.boundingRect(largest_contour)
+        x2 = x1 + w
+        y2 = y1 + h
+
+        # Calculate average color of object pixels
+        object_pixels = rgb[object_mask > 0]
+        if len(object_pixels) == 0:
+            avg_color = (0, 0, 0)
+        else:
+            avg_color = tuple(np.mean(object_pixels, axis=0).astype(int))
+
+        return {
+            "mask": object_mask > 0,
+            "centroid": (cx, cy),
+            "color": avg_color,
+            "bbox": (x1, y1, x2, y2),
+            "contour": largest_contour
+        }
+
+    def _render_object_frame(
         self,
-        frame1: np.ndarray,
-        frame2: np.ndarray,
+        canvas_shape: Tuple[int, int],
+        obj1: Dict[str, Any],
+        obj2: Dict[str, Any],
         t: float
     ) -> np.ndarray:
         """
-        Simple linear interpolation between two frames.
+        Render a frame with object at interpolated position and color.
 
         Args:
-            frame1: First keyframe (RGBA)
-            frame2: Second keyframe (RGBA)
-            t: Interpolation parameter (0.0 = frame1, 1.0 = frame2)
+            canvas_shape: (height, width) of output frame
+            obj1: Object properties from keyframe 1
+            obj2: Object properties from keyframe 2
+            t: Interpolation parameter (0.0 = obj1, 1.0 = obj2)
 
         Returns:
-            Interpolated frame (RGBA)
+            Rendered frame (RGBA)
         """
-        # Ensure same shape
-        if frame1.shape != frame2.shape:
-            # Resize frame2 to match frame1
-            img2 = Image.fromarray(frame2, mode="RGBA")
-            img2_resized = img2.resize(
-                (frame1.shape[1], frame1.shape[0]),
-                Image.Resampling.LANCZOS
-            )
-            frame2 = np.array(img2_resized, dtype=np.uint8)
+        height, width = canvas_shape
 
-        # Linear blend
-        # Convert to float for interpolation
-        f1 = frame1.astype(np.float32)
-        f2 = frame2.astype(np.float32)
+        # Create blank white canvas with full opacity
+        canvas = np.ones((height, width, 4), dtype=np.uint8) * 255
+        canvas[:, :, :3] = 255  # White RGB
+        canvas[:, :, 3] = 255   # Full opacity
 
-        # Interpolate
-        interpolated = (1.0 - t) * f1 + t * f2
+        # Interpolate position
+        x1, y1 = obj1["centroid"]
+        x2, y2 = obj2["centroid"]
 
-        # Clip and convert back to uint8
-        interpolated = np.clip(interpolated, 0, 255).astype(np.uint8)
+        interp_x = int((1 - t) * x1 + t * x2)
+        interp_y = int((1 - t) * y1 + t * y2)
 
-        return interpolated
+        # Interpolate color
+        r1, g1, b1 = obj1["color"]
+        r2, g2, b2 = obj2["color"]
+
+        interp_r = int((1 - t) * r1 + t * r2)
+        interp_g = int((1 - t) * g1 + t * g2)
+        interp_b = int((1 - t) * b1 + t * b2)
+        interp_color = (interp_r, interp_g, interp_b)
+
+        # Get object shape from keyframe 1 (assume shape doesn't change much)
+        contour = obj1["contour"]
+
+        # Calculate translation offset
+        orig_x, orig_y = obj1["centroid"]
+        offset_x = interp_x - orig_x
+        offset_y = interp_y - orig_y
+
+        # Translate contour to new position
+        translated_contour = contour.copy()
+        translated_contour[:, :, 0] += offset_x
+        translated_contour[:, :, 1] += offset_y
+
+        # Create PIL image for drawing
+        pil_canvas = Image.fromarray(canvas, mode="RGBA")
+        draw = ImageDraw.Draw(pil_canvas)
+
+        # Convert contour to list of tuples for PIL
+        points = [(int(pt[0][0]), int(pt[0][1])) for pt in translated_contour]
+
+        # Draw filled polygon with interpolated color
+        if len(points) >= 3:
+            draw.polygon(points, fill=interp_color + (255,))
+
+        # Convert back to numpy
+        result = np.array(pil_canvas, dtype=np.uint8)
+
+        return result
 
     def _apply_easing(self, t: float, curve_type: str = "linear") -> float:
         """
@@ -157,7 +283,11 @@ class FrameGeneratorService:
         """
         Generate intermediate frames based on plan.
 
-        Phase 1: Simple linear interpolation with easing
+        Phase 1: Object-based motion interpolation
+        - Detects objects in keyframes
+        - Interpolates position and color
+        - Renders objects in motion (not fading)
+
         Future: AnimateDiff generation with ControlNet guidance
 
         Args:
@@ -169,7 +299,7 @@ class FrameGeneratorService:
         Returns:
             List of generated frame paths
         """
-        logger.info(f"GENERATOR: Starting frame generation for job {job_id}")
+        logger.info(f"GENERATOR: Starting object-based frame generation for job {job_id}")
 
         # Load keyframes
         try:
@@ -178,6 +308,22 @@ class FrameGeneratorService:
         except Exception as e:
             logger.error(f"Failed to load keyframes: {e}")
             raise ValueError(f"Could not load keyframe images: {e}")
+
+        # Detect objects in keyframes
+        logger.info("GENERATOR: Detecting objects in keyframes...")
+        obj1 = self._detect_object(kf1)
+        obj2 = self._detect_object(kf2)
+
+        if obj1 is None or obj2 is None:
+            logger.error("Failed to detect objects in one or both keyframes")
+            raise ValueError("Could not detect moving objects in keyframes")
+
+        logger.info(
+            f"GENERATOR: Object 1 at {obj1['centroid']}, color {obj1['color']}"
+        )
+        logger.info(
+            f"GENERATOR: Object 2 at {obj2['centroid']}, color {obj2['color']}"
+        )
 
         # Extract plan parameters
         num_frames = plan.get("num_frames", 8)
@@ -190,6 +336,9 @@ class FrameGeneratorService:
 
         generated_frames = []
 
+        # Get canvas size from keyframe 1
+        canvas_shape = (kf1.shape[0], kf1.shape[1])
+
         # Generate frames according to schedule
         for i, frame_info in enumerate(frame_schedule):
             # Get interpolation parameter
@@ -198,7 +347,7 @@ class FrameGeneratorService:
             # Apply easing curve
             t_eased = self._apply_easing(t_linear, timing_curve)
 
-            # Generate frame
+            # Generate frame with object at interpolated state
             if t_eased == 0.0:
                 # First keyframe
                 interpolated = kf1.copy()
@@ -206,8 +355,10 @@ class FrameGeneratorService:
                 # Second keyframe
                 interpolated = kf2.copy()
             else:
-                # Interpolate
-                interpolated = self._interpolate_linear(kf1, kf2, t_eased)
+                # Render object at interpolated position and color
+                interpolated = self._render_object_frame(
+                    canvas_shape, obj1, obj2, t_eased
+                )
 
             # Save frame
             frame_filename = f"frame_{i:03d}.png"
@@ -223,7 +374,7 @@ class FrameGeneratorService:
 
         logger.info(
             f"GENERATOR: Completed {len(generated_frames)} frames "
-            f"with {timing_curve} timing"
+            f"with {timing_curve} timing and object-based motion"
         )
 
         return generated_frames
