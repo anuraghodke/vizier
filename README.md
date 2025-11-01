@@ -41,7 +41,7 @@ For more details, see [ANIMATION_STYLE.md](docs/ANIMATION_STYLE.md).
 
 - **Backend**: FastAPI, Celery, Redis, LangGraph (Multi-agent system)
 - **Frontend**: Next.js, React, TypeScript, TailwindCSS
-- **AI**: Claude API (Analysis & reasoning), AnimateDiff (Frame generation), ControlNet (Structure guidance)
+- **AI**: Claude API (Analysis & reasoning with prompt caching), AnimateDiff (Frame generation), ControlNet (Structure guidance)
 - **Infrastructure**: Docker Compose
 
 ## Quick Start
@@ -127,3 +127,19 @@ npm run dev
 cd backend
 celery -A app.workers.celery_worker worker --loglevel=info
 ```
+
+## Performance Optimizations
+
+### Prompt Caching
+
+Vizier **requires** Anthropic's prompt caching feature for all Claude API calls. System prompts are cached with `cache_control: {"type": "ephemeral"}`, which provides:
+
+- **Reduced latency**: Cached prompts process faster on subsequent requests
+- **Lower costs**: Cached tokens cost 90% less than regular input tokens
+- **Better performance**: Especially beneficial during refinement iterations in the agent loop
+
+**Cached Components:**
+- **Instruction Parser** (`claude_service.py`): System prompt defining animation parameter extraction rules
+- **Keyframe Analyzer** (`claude_vision_service.py`): System prompt defining animation analysis requirements
+
+**Important**: If prompt caching is not available or not working, the services will raise an error. This ensures optimal performance and cost efficiency. Cache entries persist for 5 minutes of inactivity.

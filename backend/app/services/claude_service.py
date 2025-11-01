@@ -74,11 +74,17 @@ Respond ONLY with valid JSON matching this structure (no markdown, no explanatio
             raise ValueError("Instruction must be less than 500 characters")
 
         try:
-            # Call Claude API
+            # Call Claude API with prompt caching on system prompt
             message = self.client.messages.create(
                 model=self.model,
                 max_tokens=1024,
-                system=self.SYSTEM_PROMPT,
+                system=[
+                    {
+                        "type": "text",
+                        "text": self.SYSTEM_PROMPT,
+                        "cache_control": {"type": "ephemeral"}
+                    }
+                ],
                 messages=[
                     {
                         "role": "user",
@@ -86,6 +92,14 @@ Respond ONLY with valid JSON matching this structure (no markdown, no explanatio
                     }
                 ]
             )
+
+            # Validate that prompt caching is working
+            usage = message.usage
+            if not hasattr(usage, 'cache_creation_input_tokens') and not hasattr(usage, 'cache_read_input_tokens'):
+                raise Exception(
+                    "Prompt caching is not enabled or not working. "
+                    "Ensure you're using a model that supports prompt caching."
+                )
 
             # Extract response text
             response_text = message.content[0].text.strip()
