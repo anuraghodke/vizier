@@ -11,11 +11,19 @@ Verifies that:
 
 import sys
 import os
+from dotenv import load_dotenv
+
+# Load environment variables (including LangSmith tracing config)
+load_dotenv()
 
 # Add backend to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../backend"))
 
-from backend.app.telekinesis.graph import build_telekinesis_graph, create_initial_state
+from backend.app.telekinesis.graph import (
+    build_telekinesis_graph,
+    create_initial_state,
+    run_telekinesis_pipeline,
+)
 from backend.app.telekinesis.logging_config import setup_telekinesis_logging
 
 
@@ -64,7 +72,7 @@ def test_graph_execution():
     print("\nExecuting graph...\n")
 
     try:
-        final_state = graph.invoke(initial_state)
+        final_state = run_telekinesis_pipeline(graph, initial_state)
         print("\n✓ Graph execution completed")
         return final_state
     except Exception as e:
@@ -257,45 +265,56 @@ def run_all_tests():
 
     results = []
 
-    # Test 1: Graph building
-    results.append(("Graph Building", test_graph_builds()))
+    try:
+        # Test 1: Graph building
+        results.append(("Graph Building", test_graph_builds()))
 
-    # Test 2: Graph execution
-    final_state = test_graph_execution()
-    results.append(("Graph Execution", final_state is not None))
+        # Test 2: Graph execution
+        final_state = test_graph_execution()
+        results.append(("Graph Execution", final_state is not None))
 
-    # Test 3: State population
-    results.append(("State Population", test_state_population(final_state)))
+        # Test 3: State population
+        results.append(("State Population", test_state_population(final_state)))
 
-    # Test 4: Agent sequence
-    results.append(("Agent Sequence", test_agent_sequence(final_state)))
+        # Test 4: Agent sequence
+        results.append(("Agent Sequence", test_agent_sequence(final_state)))
 
-    # Test 5: Output details
-    results.append(("Output Details", test_output_details(final_state)))
+        # Test 5: Output details
+        results.append(("Output Details", test_output_details(final_state)))
 
-    # Test 6: Routing logic
-    results.append(("Conditional Routing", test_quality_routing()))
+        # Test 6: Routing logic
+        results.append(("Conditional Routing", test_quality_routing()))
 
-    # Summary
-    print("\n" + "=" * 60)
-    print("TEST SUMMARY")
-    print("=" * 60)
+        # Summary
+        print("\n" + "=" * 60)
+        print("TEST SUMMARY")
+        print("=" * 60)
 
-    passed = sum(1 for _, result in results if result)
-    total = len(results)
+        passed = sum(1 for _, result in results if result)
+        total = len(results)
 
-    for test_name, result in results:
-        status = "✓ PASS" if result else "✗ FAIL"
-        print(f"{status}: {test_name}")
+        for test_name, result in results:
+            status = "✓ PASS" if result else "✗ FAIL"
+            print(f"{status}: {test_name}")
 
-    print(f"\nPassed: {passed}/{total}")
+        print(f"\nPassed: {passed}/{total}")
 
-    if passed == total:
-        print("\n🎉 ALL TESTS PASSED - Phase 0 Complete!")
-        return 0
-    else:
-        print(f"\n⚠️  {total - passed} test(s) failed")
-        return 1
+        if passed == total:
+            print("\n🎉 ALL TESTS PASSED - Phase 0 Complete!")
+            return 0
+        else:
+            print(f"\n⚠️  {total - passed} test(s) failed")
+            return 1
+    finally:
+        # Flush LangSmith traces before exit
+        try:
+            from langsmith import Client
+            client = Client()
+            print("\n[Flushing LangSmith traces...]")
+            client.flush()
+            print("[LangSmith traces flushed successfully]")
+        except Exception as e:
+            print(f"[Warning: Failed to flush LangSmith traces: {e}]")
 
 
 if __name__ == "__main__":

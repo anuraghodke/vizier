@@ -8,7 +8,6 @@ Phase 1: ANALYZER uses Claude Vision, GENERATOR uses AnimateDiff (basic)
 import logging
 from datetime import datetime
 from typing import Dict, Any
-from langsmith import traceable
 from .state import AnimationState
 from .console import (
     print_agent_start,
@@ -25,7 +24,6 @@ from .console import (
 logger = logging.getLogger(__name__)
 
 
-@traceable(run_type="agent", name="Analyzer Agent")
 def analyzer_agent(state: AnimationState) -> AnimationState:
     """
     ANALYZER AGENT - Phase 1 Implementation
@@ -110,7 +108,6 @@ def analyzer_agent(state: AnimationState) -> AnimationState:
     return state
 
 
-@traceable(run_type="agent", name="Principles Agent")
 def principles_agent(state: AnimationState) -> AnimationState:
     """
     PRINCIPLES AGENT - Phase 0 Stub
@@ -175,7 +172,6 @@ def principles_agent(state: AnimationState) -> AnimationState:
     return state
 
 
-@traceable(run_type="agent", name="Planner Agent")
 def planner_agent(state: AnimationState) -> AnimationState:
     """
     PLANNER AGENT - Phase 0 Stub
@@ -246,7 +242,6 @@ def planner_agent(state: AnimationState) -> AnimationState:
     return state
 
 
-@traceable(run_type="agent", name="Generator Agent")
 def generator_agent(state: AnimationState) -> AnimationState:
     """
     GENERATOR AGENT - Phase 1 Implementation
@@ -311,7 +306,6 @@ def generator_agent(state: AnimationState) -> AnimationState:
     return state
 
 
-@traceable(run_type="agent", name="Validator Agent")
 def validator_agent(state: AnimationState) -> AnimationState:
     """
     VALIDATOR AGENT - Phase 0 Stub
@@ -374,7 +368,6 @@ def validator_agent(state: AnimationState) -> AnimationState:
     return state
 
 
-@traceable(run_type="agent", name="Refiner Agent")
 def refiner_agent(state: AnimationState) -> AnimationState:
     """
     REFINER AGENT - Phase 0 Stub
