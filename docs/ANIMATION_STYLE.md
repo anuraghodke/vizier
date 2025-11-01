@@ -30,7 +30,7 @@ This style combines traditional hand-drawn animation with:
 ### 3. Extreme Rotations
 - **What it is**: Full 360° motion around architectural structures
 - **In Vizier**: When interpolating rotating objects or environments, maintain proper vanishing point transitions
-- **Challenge**: FILM model needs to understand rotational motion, not just lateral movement
+- **Challenge**: Telekinesis agents must analyze rotational motion and plan arc-based paths for natural rotation
 
 ### 4. Complex Perspective Systems
 - **Multiple Vanishing Points**: 2-, 3-, even 5-point perspective in complex scenes
@@ -80,56 +80,48 @@ Vizier's interpolation must:
 
 ---
 
-## FILM Model Behavior Analysis (Phase 0 Test Results)
+## Telekinesis Agent Loop Architecture
 
-### [WARNING] CRITICAL FINDINGS FROM TESTING
+### How Vizier Generates Animation
 
-Phase 0 testing revealed that FILM's behavior **differs significantly** from initial expectations. See `PHASE_0_FINDINGS.md` for complete analysis.
+Vizier uses a **multi-agent system** called Telekinesis that applies the **12 Principles of Animation** to generate intermediate frames. Instead of naive pixel interpolation, specialized AI agents work together to:
 
-### What FILM Does Well 
-- **Same-object motion**: Objects moving with consistent appearance (same color, same shape)
-- **Camera pans**: Background motion and parallax effects
-- **Subtle timing**: Small adjustments to motion speed/timing
-- **Optical flow tracking**: Can track pixels when appearance is consistent
+1. **ANALYZER Agent**: Understands what's changing between keyframes
+   - Visual analysis using Claude Vision
+   - Motion type detection (rotation, translation, deformation)
+   - Object segmentation and part identification
+   - Pose detection and style analysis
 
-### What FILM Struggles With 
-**TESTED AND CONFIRMED**:
+2. **PRINCIPLES Agent**: Determines which animation principles apply
+   - Identifies relevant principles (arc, squash & stretch, timing, etc.)
+   - Assigns confidence scores
+   - Extracts principle-specific parameters
 
-1. **Position + Color Change = Ghosting**
-   ```
-   Input:
-     Frame A: Red ball at left (x=128)
-     Frame B: Blue ball at right (x=384)
+3. **PLANNER Agent**: Creates detailed frame-by-frame generation plan
+   - Generates timing curves (ease-in, ease-out, custom)
+   - Calculates arc paths for natural motion
+   - Plans deformation schedules (squash/stretch per frame)
+   - Designs motion layers for overlapping action
 
-   Expected: Purple ball in middle
-   Actual: Two faint balls (red left, blue right) - CROSSFADE
-   ```
-   **Reason**: Optical flow can't link pixels when both position AND appearance change
+4. **GENERATOR Agent**: Creates intermediate frames using generative models
+   - Uses FrameGeneratorService for object-based interpolation (Phase 1)
+   - Will integrate AnimateDiff + ControlNet guidance (future phases)
+   - Applies frame-by-frame deformations
+   - Preserves transparency from original keyframes
 
-2. **Transparent Backgrounds = Worse Ghosting**
-   - FILM treats transparent regions as "nothing"
-   - Objects in different positions appear as separate entities
-   - Recommendation: Use solid backgrounds when possible
+5. **VALIDATOR Agent**: Assesses quality and principle adherence
+   - Quality assessment using Claude Vision
+   - Volume consistency checking
+   - Motion smoothness analysis
+   - Principle adherence validation
 
-3. **Motion Blur Even With Same Color**
-   - Same-colored objects moving still show some ghosting
-   - Not the clean "cel animation" look
-   - More photorealistic blur than hand-drawn motion
+6. **REFINER Agent**: Fixes specific issues identified by validator
+   - Style transfer for consistency
+   - Inpainting for problem regions
+   - Temporal smoothing
+   - Line art cleanup
 
-4. **Complex Rotations**: 360° rotations cause morphing artifacts
-5. **Perspective Shifts**: Moving vanishing points confuse optical flow
-6. **Style Morphing**: Creates photorealistic blend, not hand-drawn style
-7. **Squash & Stretch**: Volume not preserved, creates unnatural morphing
-
-### Test Results Summary
-| Test Case | Result | Quality |
-|-----------|--------|---------|
-| Red ball → Blue ball (transparent BG) | Strong ghosting | [FAILED] BAD |
-| Red ball → Blue ball (white BG) | Strong ghosting | [FAILED] BAD |
-| Red ball → Red ball (white BG) | Motion blur, centered | [WARNING] OK |
-| Blue ball → Blue ball (white BG) | Motion blur, centered | [WARNING] OK |
-
-**Conclusion**: FILM is best for consistent-appearance motion, struggles with transformations.
+**Key Advantage**: This agent-based approach treats animation as an animation problem, not just a computer vision problem, ensuring principles like arc motion, squash & stretch, and timing are properly applied.
 
 ---
 
@@ -173,14 +165,13 @@ Phase 0 testing revealed that FILM's behavior **differs significantly** from ini
 
 ---
 
-## Implementation Requirements
+## Implementation Through Telekinesis Agents
 
-### Phase 1: Core Service Development
-When building `film_service.py`:
-1. **Preprocessing**:
+### ANALYZER Agent Responsibilities
+1. **Visual Analysis**:
+   - Use Claude Vision to understand what's in each keyframe
    - Detect if images represent "same object in different states"
-   - Analyze motion vectors between keyframes
-   - Identify if motion is translation, rotation, scale, or combination
+   - Identify objects, characters, backgrounds
 
 2. **Motion Type Detection**:
    - **Translation**: Object position changes (most common)
@@ -189,29 +180,44 @@ When building `film_service.py`:
    - **Deformation**: Object shape changes (squash/stretch)
    - **Hybrid**: Combination of above
 
-3. **FILM Parameters**:
-   - Use FILM's optical flow for motion-aware interpolation
-   - May need to adjust preprocessing for extreme cases
-   - Consider edge cases where FILM might fail
+3. **Object Segmentation**:
+   - Identify moving parts vs static elements
+   - Detect pose changes (for characters)
+   - Measure volume and structural properties
 
-### Phase 2: Claude API Integration
-When building `claude_service.py`:
-1. **Parse motion intent**:
+### PRINCIPLES Agent Responsibilities
+1. **Principle Identification**:
+   - Analyze motion to identify relevant principles
+   - Assign confidence scores to each applicable principle
+   - Extract principle-specific parameters (arc angle, squash amount, etc.)
+
+2. **Motion Intent Parsing** (via Claude Service):
    - "bounce" → arc motion with squash/stretch
-   - "rotate" → rotational interpolation
-   - "zoom" → scale interpolation
+   - "rotate" → rotational interpolation with arc
+   - "zoom" → scale interpolation with slow-in/slow-out
    - "glide" → smooth linear translation
 
-2. **Extract timing curves**:
+3. **Timing Curve Extraction**:
    - "ease-in" → slow start, fast end
    - "ease-out" → fast start, slow end
    - "linear" → constant speed
+   - "bounce" → elastic timing curve
 
-3. **Detect advanced techniques**:
-   - "squash and stretch"
-   - "anticipation"
-   - "follow-through"
-   - "arc motion"
+### PLANNER Agent Responsibilities
+1. **Frame Schedule Generation**:
+   - Create detailed frame-by-frame plan
+   - Calculate interpolation parameters (t values)
+   - Apply timing curves from principles
+
+2. **Motion Path Planning**:
+   - Calculate arc paths for natural motion
+   - Plan position interpolation with curves
+   - Design deformation schedules (squash/stretch per frame)
+
+3. **Generation Strategy**:
+   - Determine ControlNet strategy (pose, line art, depth)
+   - Plan motion layers for overlapping action
+   - Set volume preservation constraints
 
 ---
 
@@ -234,25 +240,27 @@ An interpolated animation passes validation if:
 
 ## Known Limitations (To Address in Future Phases)
 
-### FILM Model Constraints
-1. **No semantic understanding**: FILM doesn't know "this is a ball"
-   - It only tracks pixel motion via optical flow
-   - Can't enforce "object rules" like volume preservation
+### Current Phase 1 Constraints (Object-Based Interpolation)
+1. **Limited to simple object motion**: FrameGeneratorService uses color-based segmentation
+   - Works well for simple objects (balls, shapes)
+   - May struggle with complex characters or multiple objects
+   - Basic interpolation without generative models
 
-2. **Style morphing**: FILM creates photorealistic interpolation
-   - May lose hand-drawn line quality
-   - Colors may blend in unintended ways
-   - Textures may blur
+2. **No generative enhancement**: Currently using simple position/color interpolation
+   - Will improve with AnimateDiff integration (Phase 1+)
+   - ControlNet guidance will add structural control
+   - Style preservation requires refinement agent
 
-3. **Complex rotations**: 360° rotations may cause artifacts
-   - Optical flow can get confused on full rotations
-   - May need multiple keyframes for clean rotation
+3. **Principle application is basic**: Some principles not yet fully implemented
+   - Arc motion: Basic path calculation (Phase 1)
+   - Squash/stretch: Planned for Phase 5
+   - Overlapping action: Planned for Phase 5
 
-### Mitigation Strategies
-1. **User guidance**: Recommend more keyframes for complex motions
-2. **Motion type hints**: Use Claude-parsed intent to preprocess images
-3. **Post-processing**: Consider adding style-preserving filters
-4. **Layered approach**: Separate character from background for complex scenes
+### Future Improvements
+1. **AnimateDiff Integration**: Add motion-aware generation (Phase 1)
+2. **ControlNet Guidance**: Structural control for pose and line art (Phase 3)
+3. **Advanced Principles**: Full squash/stretch, overlapping action (Phase 5)
+4. **Style Preservation**: Ebsynth-style refinement (Phase 4+)
 
 ---
 
@@ -290,19 +298,36 @@ Result:
 
 ## Success Metrics
 
-### Phase 0-1 (Current)
-- [COMPLETE] FILM produces motion-aware interpolation (not crossfade)
-- [COMPLETE] Simple translation works (e.g., ball moving left to right)
-- [COMPLETE] Color transitions work (e.g., red ball → blue ball)
+### Phase 0: Telekinesis Foundation [COMPLETE]
+- [COMPLETE] Multi-agent infrastructure (LangGraph)
+- [COMPLETE] 6 agent stubs created and routing works
+- [COMPLETE] AnimationState TypedDict defined
+- [COMPLETE] Animation Principles Knowledge Base created
 
-### Phase 2-3
-- ⬜ Rotations work without major artifacts
-- ⬜ Scale changes work (dolly in/out)
+### Phase 1: Minimal Viable Pipeline [IN PROGRESS]
+- ⬜ Claude Vision analysis in ANALYZER agent
+- ⬜ FrameGeneratorService integration in GENERATOR agent
+- ⬜ End-to-end agent loop execution
+- ⬜ Simple object motion interpolation works
+
+### Phase 2: Vision Analysis
+- ⬜ Real motion detection (translation, rotation, scale)
+- ⬜ Claude-based principle identification
+- ⬜ Principle parameters extraction
+
+### Phase 3: ControlNet Guidance
+- ⬜ Structural control (pose + line art)
+- ⬜ Arc path calculations
 - ⬜ Timing curves applied correctly (ease-in/out)
 
-### Phase 4+
-- ⬜ Arc motion with intermediate keyframes
+### Phase 4: Validation Loop
+- ⬜ Real quality checking
+- ⬜ Refiner implementation
+- ⬜ Iterative improvement
+
+### Phase 5: Advanced Principles
 - ⬜ Squash/stretch with volume preservation
+- ⬜ Overlapping action (motion layers)
 - ⬜ Complex perspective shifts (moving vanishing points)
 
 ---
@@ -324,17 +349,23 @@ Result:
 
 ## Next Steps
 
-1. **Create test image pairs** that demonstrate:
+1. **Complete Phase 1 Implementation**:
+   - Integrate Claude Vision in ANALYZER agent
+   - Connect FrameGeneratorService to GENERATOR agent
+   - End-to-end test with simple object motion
+
+2. **Create test image pairs** that demonstrate:
    - Translation + color change (red ball → blue ball)
    - Simple rotation (character turning)
    - Scale change (object approaching camera)
 
-2. **Run FILM tests** with these pairs to validate physics-based behavior
+3. **Validate agent coordination**:
+   - Test that agents pass state correctly
+   - Verify principle detection works
+   - Check frame generation quality
 
-3. **Document results** in `test_images/` with notes on quality
-
-4. **Adjust preprocessing** in `film_service.py` based on findings
+4. **Document results** in `test_images/` with notes on quality
 
 ---
 
-**Last Updated**: Phase 0 Complete - Animation Style Context Added
+**Last Updated**: Telekinesis Agent Loop Architecture - Phase 0 Complete, Phase 1 In Progress
