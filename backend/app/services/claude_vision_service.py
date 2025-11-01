@@ -201,11 +201,17 @@ Be specific and detailed. This analysis will be used to plan frame generation.""
         ]
 
         try:
-            # Call Claude Vision API
+            # Call Claude Vision API with prompt caching on system prompt
             response = self.client.messages.create(
                 model=self.model,
                 max_tokens=2048,
-                system=self.ANALYSIS_SYSTEM_PROMPT,
+                system=[
+                    {
+                        "type": "text",
+                        "text": self.ANALYSIS_SYSTEM_PROMPT,
+                        "cache_control": {"type": "ephemeral"}
+                    }
+                ],
                 messages=[
                     {
                         "role": "user",
@@ -213,6 +219,14 @@ Be specific and detailed. This analysis will be used to plan frame generation.""
                     }
                 ]
             )
+
+            # Validate that prompt caching is working
+            usage = response.usage
+            if not hasattr(usage, 'cache_creation_input_tokens') and not hasattr(usage, 'cache_read_input_tokens'):
+                raise Exception(
+                    "Prompt caching is not enabled or not working. "
+                    "Ensure you're using a model that supports prompt caching."
+                )
 
             # Extract response text
             response_text = response.content[0].text.strip()
