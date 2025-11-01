@@ -1,8 +1,8 @@
 """
-Agent stub functions for Telekinesis system.
+Agent functions for Telekinesis system.
 
-Phase 0: These are minimal stubs that return placeholder data.
-Each agent will be implemented in later phases.
+Phase 0: Minimal stubs with placeholder data
+Phase 1: ANALYZER uses Claude Vision, GENERATOR uses AnimateDiff (basic)
 """
 
 import logging
@@ -26,16 +26,15 @@ logger = logging.getLogger(__name__)
 
 def analyzer_agent(state: AnimationState) -> AnimationState:
     """
-    ANALYZER AGENT - Phase 0 Stub
+    ANALYZER AGENT - Phase 1 Implementation
 
     Purpose: Analyze keyframes to understand motion, style, and structure.
 
-    Phase 0: Returns placeholder analysis.
+    Phase 1: Claude Vision analysis of keyframes
     Future phases will add:
-    - Claude Vision analysis
     - MediaPipe pose detection
     - OpenCV segmentation
-    - Motion magnitude calculation
+    - Advanced motion magnitude calculation
     """
     iteration = state.get("iteration_count", 0)
     print_agent_start("analyzer", iteration)
@@ -45,23 +44,52 @@ def analyzer_agent(state: AnimationState) -> AnimationState:
     keyframe2 = state.get("keyframe2", "")
     instruction = state.get("instruction", "")
 
-    logger.info("Analyzing keyframes...")
+    try:
+        # Import vision service
+        from ..services.claude_vision_service import get_vision_service
 
-    # Placeholder analysis
-    analysis = {
-        "motion_type": "unknown",
-        "primary_subject": "detected_object",
-        "parts_moved": ["main_body"],
-        "motion_magnitude": {"translation": 0, "rotation": 0},
-        "motion_direction": {"angle": 0, "arc_detected": False},
-        "style": "unknown",
-        "pose_data": {},
-        "object_segments": [],
-        "color_palette": [],
-        "volume_analysis": {},
-        "_phase": 0,
-        "_status": "stub"
-    }
+        # Analyze keyframes with Claude Vision
+        vision_service = get_vision_service()
+        analysis = vision_service.analyze_keyframes(
+            keyframe1_path=keyframe1,
+            keyframe2_path=keyframe2,
+            instruction=instruction
+        )
+
+        logger.info(
+            f"ANALYZER: Motion type={analysis.get('motion_type')}, "
+            f"Style={analysis.get('style')}"
+        )
+
+    except Exception as e:
+        # Fallback to placeholder if vision analysis fails
+        logger.error(f"ANALYZER vision analysis failed: {e}")
+        logger.warning("ANALYZER falling back to placeholder analysis")
+
+        analysis = {
+            "motion_type": "unknown",
+            "primary_subject": "detected_object",
+            "motion_magnitude": {"distance_percent": 0, "rotation_degrees": 0},
+            "motion_direction": {"description": "unknown", "arc_detected": False},
+            "motion_energy": "medium",
+            "style": "unknown",
+            "parts_analysis": {"moving_parts": [], "static_parts": []},
+            "visual_characteristics": {
+                "has_deformation": False,
+                "has_motion_blur": False,
+                "has_transparency": True,
+                "num_objects": 1,
+                "has_background": False
+            },
+            "pose_data": {},
+            "object_segments": [],
+            "color_palette": [],
+            "volume_analysis": {},
+            "animation_suggestion": "Error during analysis",
+            "_phase": 1,
+            "_status": "fallback",
+            "_error": str(e)
+        }
 
     state["analysis"] = analysis
 
@@ -71,7 +99,7 @@ def analyzer_agent(state: AnimationState) -> AnimationState:
         "agent": "analyzer",
         "timestamp": datetime.now().isoformat(),
         "action": "completed_analysis",
-        "details": "Phase 0 stub - placeholder analysis returned"
+        "details": f"Phase 1 - Claude Vision analysis: {analysis.get('motion_type', 'unknown')}"
     })
     state["messages"] = messages
 
@@ -216,11 +244,11 @@ def planner_agent(state: AnimationState) -> AnimationState:
 
 def generator_agent(state: AnimationState) -> AnimationState:
     """
-    GENERATOR AGENT - Phase 0 Stub
+    GENERATOR AGENT - Phase 1 Implementation
 
     Purpose: Generate intermediate frames based on plan.
 
-    Phase 0: Returns placeholder frame paths (doesn't generate actual images).
+    Phase 1: Simple linear interpolation with easing
     Future phases will add:
     - AnimateDiff integration
     - ControlNet guidance
@@ -236,14 +264,31 @@ def generator_agent(state: AnimationState) -> AnimationState:
     keyframe2 = state.get("keyframe2", "")
     job_id = state.get("job_id", "test_job")
 
-    num_frames = plan.get("num_frames", 8)
-    logger.info(f"Generating {num_frames} frames...")
+    try:
+        # Import frame generator service
+        from ..services.frame_generator_service import get_generator_service
 
-    # Placeholder: Generate fake frame paths (simulate progress)
-    frames = []
-    for i in range(num_frames):
-        frames.append(f"/outputs/{job_id}/frame_{i:03d}.png")
-        print_generation_progress(i + 1, num_frames)
+        # Generate frames
+        generator = get_generator_service(output_dir="outputs")
+        frames = generator.generate_frames(
+            keyframe1_path=keyframe1,
+            keyframe2_path=keyframe2,
+            plan=plan,
+            job_id=job_id
+        )
+
+        logger.info(f"GENERATOR: Generated {len(frames)} frames successfully")
+
+    except Exception as e:
+        # Fallback to placeholder paths if generation fails
+        logger.error(f"GENERATOR frame generation failed: {e}")
+        logger.warning("GENERATOR falling back to placeholder paths")
+
+        num_frames = plan.get("num_frames", 8)
+        frames = [f"outputs/{job_id}/frame_{i:03d}.png" for i in range(num_frames)]
+
+        # Add error to state
+        state["error"] = f"Frame generation failed: {str(e)}"
 
     state["frames"] = frames
 
@@ -253,11 +298,11 @@ def generator_agent(state: AnimationState) -> AnimationState:
         "agent": "generator",
         "timestamp": datetime.now().isoformat(),
         "action": "generated_frames",
-        "details": f"Phase 0 stub - {num_frames} placeholder frames"
+        "details": f"Phase 1 - Generated {len(frames)} frames via interpolation"
     })
     state["messages"] = messages
 
-    print_agent_complete("generator", f"{num_frames} frames generated")
+    logger.info(f"GENERATOR agent completed - {len(frames)} frames")
     return state
 
 
