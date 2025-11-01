@@ -8,6 +8,7 @@ quality scores and iteration counts.
 import logging
 from typing import Literal
 from langgraph.graph import StateGraph, END
+from langsmith import traceable
 from .state import AnimationState
 from .agents import (
     analyzer_agent,
@@ -69,6 +70,7 @@ def route_from_validator(
     return "end"
 
 
+@traceable(run_type="chain", name="Build Telekinesis Graph")
 def build_telekinesis_graph() -> StateGraph:
     """
     Build the Telekinesis agent graph.

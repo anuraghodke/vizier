@@ -33,6 +33,7 @@ dependencies = [
     "langchain>=0.3.13",
     "langchain-anthropic>=0.3.3",
     "langchain-core>=0.3.30",
+    "langsmith>=0.1.0",
 
     # Image Processing
     "Pillow>=11.0.0",
