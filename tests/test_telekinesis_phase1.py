@@ -12,8 +12,10 @@ Expected outcome: Real frames generated with blurry/morphed quality
 """
 import os
 import sys
+import traceback
 from pathlib import Path
 from dotenv import load_dotenv
+from langsmith import Client
 
 # Load environment variables (including LangSmith tracing config)
 load_dotenv()
@@ -138,7 +140,6 @@ def test_phase1_pipeline():
 
     except Exception as e:
         print(f"\n  [ERROR] Pipeline execution failed: {e}")
-        import traceback
         traceback.print_exc()
         return False
 
@@ -248,7 +249,6 @@ if __name__ == "__main__":
     finally:
         # Flush LangSmith traces before exit
         try:
-            from langsmith import Client
             client = Client()
             print("\n[Flushing LangSmith traces...]")
             client.flush()

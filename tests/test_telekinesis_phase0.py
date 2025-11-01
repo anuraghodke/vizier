@@ -11,7 +11,10 @@ Verifies that:
 
 import sys
 import os
+import traceback
 from dotenv import load_dotenv
+from langsmith import Client
+from backend.app.telekinesis.graph import route_from_validator
 
 # Load environment variables (including LangSmith tracing config)
 load_dotenv()
@@ -77,7 +80,6 @@ def test_graph_execution():
         return final_state
     except Exception as e:
         print(f"\n✗ Graph execution failed: {e}")
-        import traceback
         traceback.print_exc()
         return None
 
@@ -215,8 +217,6 @@ def test_quality_routing():
     print("TEST 6: Conditional Routing")
     print("=" * 60)
 
-    from app.telekinesis.graph import route_from_validator
-
     # Test case 1: High quality (should end)
     state1 = {
         "validation": {"overall_quality_score": 8.5},
@@ -308,7 +308,6 @@ def run_all_tests():
     finally:
         # Flush LangSmith traces before exit
         try:
-            from langsmith import Client
             client = Client()
             print("\n[Flushing LangSmith traces...]")
             client.flush()

@@ -4,6 +4,7 @@ Tests core functionality of Phase 1 services.
 """
 import sys
 import os
+import traceback
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -118,7 +119,6 @@ def test_schemas():
 
     except Exception as e:
         print(f"\n❌ Schema tests FAILED: {e}")
-        import traceback
         traceback.print_exc()
         return False
 

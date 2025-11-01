@@ -919,6 +919,9 @@ API_URL=http://localhost:8000        # Backend URL
 - Use list comprehensions and generators where appropriate
 - Avoid nested conditionals (early returns preferred)
 - Use context managers (`with` statements) for file/resource handling
+- **NEVER use lazy imports**: All imports must be at the top of the file, never inside functions or methods
+  - Lazy imports harm readability, break IDE support, complicate debugging, and provide no real performance benefit
+  - All module dependencies should be explicit and visible at the top of the file
 
 **TypeScript/React Style:**
 - Use functional components with hooks
@@ -933,6 +936,7 @@ API_URL=http://localhost:8000        # Backend URL
 - Group related functionality in modules
 - Keep imports organized (stdlib, third-party, local)
 - Use absolute imports where possible
+- **All imports at the top of the file** - never use lazy imports inside functions or methods
 
 ### Testing Requirements
 - Write unit tests for all services

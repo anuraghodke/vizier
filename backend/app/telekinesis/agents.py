@@ -20,6 +20,8 @@ from .console import (
     print_refinement_summary,
     print_phase_badge,
 )
+from backend.app.services.claude_vision_service import get_vision_service
+from backend.app.services.frame_generator_service import get_generator_service
 
 logger = logging.getLogger(__name__)
 
@@ -45,9 +47,6 @@ def analyzer_agent(state: AnimationState) -> AnimationState:
     instruction = state.get("instruction", "")
 
     try:
-        # Import vision service
-        from ..services.claude_vision_service import get_vision_service
-
         # Analyze keyframes with Claude Vision
         vision_service = get_vision_service()
         analysis = vision_service.analyze_keyframes(
@@ -265,9 +264,6 @@ def generator_agent(state: AnimationState) -> AnimationState:
     job_id = state.get("job_id", "test_job")
 
     try:
-        # Import frame generator service
-        from ..services.frame_generator_service import get_generator_service
-
         # Generate frames
         generator = get_generator_service(output_dir="outputs")
         frames = generator.generate_frames(

@@ -3,6 +3,7 @@ Claude Vision service for analyzing keyframe images.
 Used by ANALYZER agent to understand motion, style, and structure.
 """
 import base64
+import json
 import os
 from typing import Dict, Any, Optional
 from pathlib import Path
@@ -232,7 +233,6 @@ Be specific and detailed. This analysis will be used to plan frame generation.""
             response_text = response.content[0].text.strip()
 
             # Parse JSON response
-            import json
             try:
                 analysis = json.loads(response_text)
             except json.JSONDecodeError as e:

@@ -9,6 +9,7 @@ import logging
 from typing import Literal
 from langgraph.graph import StateGraph, END
 from langsmith import traceable
+from langsmith.run_helpers import get_current_run_tree
 from .state import AnimationState
 from .agents import (
     analyzer_agent,
@@ -154,9 +155,6 @@ def run_telekinesis_pipeline(
     Returns:
         Final animation state (if stream=False) or generator (if stream=True)
     """
-    from langsmith import traceable
-    from langsmith.run_helpers import get_current_run_tree
-
     job_id = initial_state.get('job_id', 'unknown')
     instruction = initial_state.get('instruction', 'N/A')
 
