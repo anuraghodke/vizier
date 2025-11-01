@@ -72,7 +72,7 @@ class FrameGeneratorService:
 
     def _save_image(self, array: np.ndarray, output_path: str) -> None:
         """
-        Save numpy array as PNG image.
+        Save numpy array as PNG image with transparency preserved.
 
         Args:
             array: RGBA numpy array (0-255, uint8)
@@ -81,9 +81,10 @@ class FrameGeneratorService:
         # Ensure output directory exists
         Path(output_path).parent.mkdir(exist_ok=True, parents=True)
 
-        # Convert to PIL and save
+        # Convert to PIL and save with explicit PNG format to preserve transparency
         img = Image.fromarray(array, mode="RGBA")
-        img.save(output_path, format="PNG")
+        # Save as PNG - PIL automatically preserves RGBA transparency
+        img.save(output_path, format="PNG", optimize=False)
         logger.debug(f"Saved frame: {output_path}")
 
     def _detect_object(self, image: np.ndarray) -> Optional[Dict[str, Any]]:
@@ -193,10 +194,10 @@ class FrameGeneratorService:
         """
         height, width = canvas_shape
 
-        # Create blank white canvas with full opacity
-        canvas = np.ones((height, width, 4), dtype=np.uint8) * 255
-        canvas[:, :, :3] = 255  # White RGB
-        canvas[:, :, 3] = 255   # Full opacity
+        # Create blank transparent canvas using PIL (preserve PNG transparency)
+        # Use (0, 0, 0, 0) for fully transparent RGBA
+        pil_canvas = Image.new('RGBA', (width, height), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(pil_canvas)
 
         # Interpolate position
         x1, y1 = obj1["centroid"]
@@ -226,10 +227,6 @@ class FrameGeneratorService:
         translated_contour = contour.copy()
         translated_contour[:, :, 0] += offset_x
         translated_contour[:, :, 1] += offset_y
-
-        # Create PIL image for drawing
-        pil_canvas = Image.fromarray(canvas, mode="RGBA")
-        draw = ImageDraw.Draw(pil_canvas)
 
         # Convert contour to list of tuples for PIL
         points = [(int(pt[0][0]), int(pt[0][1])) for pt in translated_contour]
