@@ -24,27 +24,31 @@ dependencies = [
     "redis==5.2.1",
 
     # AI/ML
-    "anthropic==0.71.0",
-    "tensorflow==2.20.0",
-    "tensorflow-hub==0.16.1",
+    "anthropic>=0.71.0",
+    "tensorflow>=2.20.0",
+    "tensorflow-hub>=0.16.1",
 
     # LangGraph/LangChain (Telekinesis)
-    "langgraph==0.2.60",
-    "langchain==0.3.13",
-    "langchain-anthropic==0.3.3",
-    "langchain-core==0.3.28",
+    "langgraph>=0.2.60",
+    "langchain>=0.3.13",
+    "langchain-anthropic>=0.3.3",
+    "langchain-core>=0.3.30",
 
     # Image Processing
-    "Pillow==11.0.0",
-    "opencv-python-headless==4.10.0.84",
-    "numpy==2.2.3",
+    "Pillow>=11.0.0",
+    "opencv-python-headless>=4.10.0",
+    "numpy>=2.2.0",
 
     # Data Validation
-    "pydantic==2.10.5",
-    "pydantic-settings==2.7.1",
+    "pydantic>=2.10.0",
+    "pydantic-settings>=2.7.0",
 
     # Utilities
     "python-dotenv==1.0.1",
+
+    # CLI/Formatting
+    "typer[all]>=0.15.0",
+    "rich>=13.9.0",
 ]
 
 [project.optional-dependencies]
@@ -57,7 +61,7 @@ dev = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["backend/app"]
+packages = ["backend"]
 
 [tool.black]
 line-length = 100

@@ -9,6 +9,17 @@ import logging
 from datetime import datetime
 from typing import Dict, Any
 from .state import AnimationState
+from .console import (
+    print_agent_start,
+    print_agent_complete,
+    print_analysis_summary,
+    print_principles_summary,
+    print_plan_summary,
+    print_generation_progress,
+    print_validation_summary,
+    print_refinement_summary,
+    print_phase_badge,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -26,11 +37,15 @@ def analyzer_agent(state: AnimationState) -> AnimationState:
     - OpenCV segmentation
     - Motion magnitude calculation
     """
-    logger.info("ANALYZER agent started")
+    iteration = state.get("iteration_count", 0)
+    print_agent_start("analyzer", iteration)
+    print_phase_badge(0)
 
     keyframe1 = state.get("keyframe1", "")
     keyframe2 = state.get("keyframe2", "")
     instruction = state.get("instruction", "")
+
+    logger.info("Analyzing keyframes...")
 
     # Placeholder analysis
     analysis = {
@@ -56,7 +71,8 @@ def analyzer_agent(state: AnimationState) -> AnimationState:
         "details": "Phase 0 stub - placeholder analysis returned"
     })
 
-    logger.info("ANALYZER agent completed")
+    print_analysis_summary(analysis)
+    print_agent_complete("analyzer", "placeholder analysis generated")
     return state
 
 
@@ -72,9 +88,12 @@ def principles_agent(state: AnimationState) -> AnimationState:
     - Confidence scoring
     - Parameter extraction from analysis
     """
-    logger.info("PRINCIPLES agent started")
+    iteration = state.get("iteration_count", 0)
+    print_agent_start("principles", iteration)
+    print_phase_badge(0)
 
     analysis = state.get("analysis", {})
+    logger.info("Identifying applicable animation principles...")
 
     # Placeholder: Always suggest arc and slow_in_slow_out
     animation_principles = {
@@ -112,7 +131,8 @@ def principles_agent(state: AnimationState) -> AnimationState:
         "details": "Phase 0 stub - hardcoded principles returned"
     })
 
-    logger.info("PRINCIPLES agent completed")
+    print_principles_summary(animation_principles)
+    print_agent_complete("principles", "3 principles identified")
     return state
 
 
@@ -129,11 +149,15 @@ def planner_agent(state: AnimationState) -> AnimationState:
     - Deformation schedules
     - Motion layer planning
     """
-    logger.info("PLANNER agent started")
+    iteration = state.get("iteration_count", 0)
+    print_agent_start("planner", iteration)
+    print_phase_badge(0)
 
     analysis = state.get("analysis", {})
     animation_principles = state.get("animation_principles", {})
     instruction = state.get("instruction", "")
+
+    logger.info("Creating frame-by-frame generation plan...")
 
     # Placeholder: Simple 8-frame linear plan
     num_frames = 8
@@ -173,7 +197,8 @@ def planner_agent(state: AnimationState) -> AnimationState:
         "details": f"Phase 0 stub - simple {num_frames}-frame linear plan"
     })
 
-    logger.info("PLANNER agent completed")
+    print_plan_summary(plan)
+    print_agent_complete("planner", f"{num_frames}-frame plan created")
     return state
 
 
@@ -190,7 +215,9 @@ def generator_agent(state: AnimationState) -> AnimationState:
     - Deformation application
     - Layer compositing
     """
-    logger.info("GENERATOR agent started")
+    iteration = state.get("iteration_count", 0)
+    print_agent_start("generator", iteration)
+    print_phase_badge(0)
 
     plan = state.get("plan", {})
     keyframe1 = state.get("keyframe1", "")
@@ -198,9 +225,13 @@ def generator_agent(state: AnimationState) -> AnimationState:
     job_id = state.get("job_id", "test_job")
 
     num_frames = plan.get("num_frames", 8)
+    logger.info(f"Generating {num_frames} frames...")
 
-    # Placeholder: Generate fake frame paths
-    frames = [f"/outputs/{job_id}/frame_{i:03d}.png" for i in range(num_frames)]
+    # Placeholder: Generate fake frame paths (simulate progress)
+    frames = []
+    for i in range(num_frames):
+        frames.append(f"/outputs/{job_id}/frame_{i:03d}.png")
+        print_generation_progress(i + 1, num_frames)
 
     state["frames"] = frames
     state["messages"].append({
@@ -210,7 +241,7 @@ def generator_agent(state: AnimationState) -> AnimationState:
         "details": f"Phase 0 stub - {num_frames} placeholder frames"
     })
 
-    logger.info(f"GENERATOR agent completed - {num_frames} frames")
+    print_agent_complete("generator", f"{num_frames} frames generated")
     return state
 
 
@@ -227,11 +258,15 @@ def validator_agent(state: AnimationState) -> AnimationState:
     - Motion smoothness analysis
     - Principle adherence validation
     """
-    logger.info("VALIDATOR agent started")
+    iteration = state.get("iteration_count", 0)
+    print_agent_start("validator", iteration)
+    print_phase_badge(0)
 
     frames = state.get("frames", [])
     plan = state.get("plan", {})
     animation_principles = state.get("animation_principles", {})
+
+    logger.info(f"Validating {len(frames)} frames...")
 
     # Placeholder: Always return high quality score
     validation = {
@@ -263,7 +298,8 @@ def validator_agent(state: AnimationState) -> AnimationState:
         "details": f"Phase 0 stub - quality score: {validation['overall_quality_score']}"
     })
 
-    logger.info("VALIDATOR agent completed - quality score: 8.0")
+    print_validation_summary(validation)
+    print_agent_complete("validator", "validation complete")
     return state
 
 
@@ -280,14 +316,19 @@ def refiner_agent(state: AnimationState) -> AnimationState:
     - Temporal smoothing
     - Volume normalization
     """
-    logger.info("REFINER agent started")
+    iteration = state.get("iteration_count", 0)
+    print_agent_start("refiner", iteration)
+    print_phase_badge(0)
 
     frames = state.get("frames", [])
     validation = state.get("validation", {})
     job_id = state.get("job_id", "test_job")
 
+    logger.info(f"Refining {len(frames)} frames...")
+
     # Placeholder: Copy frames list to refined_frames
     refined_frames = [f.replace("frame_", "refined_frame_") for f in frames]
+    issues_fixed = ["Phase 0 stub - no actual refinement performed"]
 
     state["refined_frames"] = refined_frames
     state["messages"].append({
@@ -297,5 +338,6 @@ def refiner_agent(state: AnimationState) -> AnimationState:
         "details": "Phase 0 stub - frames copied without refinement"
     })
 
-    logger.info("REFINER agent completed")
+    print_refinement_summary(len(refined_frames), issues_fixed)
+    print_agent_complete("refiner", f"{len(refined_frames)} frames refined")
     return state
