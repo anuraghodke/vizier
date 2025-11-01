@@ -8,6 +8,7 @@ quality scores and iteration counts.
 import logging
 from typing import Literal
 from langgraph.graph import StateGraph, END
+from langsmith import traceable
 from .state import AnimationState
 from .agents import (
     analyzer_agent,
@@ -124,6 +125,67 @@ def build_telekinesis_graph() -> StateGraph:
 
     logger.info("Telekinesis graph built successfully")
     return compiled
+
+
+@traceable(
+    run_type="chain",
+    name="Telekinesis",
+    metadata={
+        "component": "telekinesis",
+        "pipeline": "animation_generation"
+    }
+)
+def run_telekinesis_pipeline(
+    graph,
+    initial_state: AnimationState,
+    stream: bool = False,
+):
+    """
+    Execute the Telekinesis graph with tracing.
+
+    This wrapper ensures all agent traces are grouped under a single
+    parent trace for the entire pipeline execution.
+
+    Args:
+        graph: Compiled Telekinesis graph
+        initial_state: Initial animation state
+        stream: If True, returns a generator for streaming; if False, returns final state
+
+    Returns:
+        Final animation state (if stream=False) or generator (if stream=True)
+    """
+    from langsmith import traceable
+    from langsmith.run_helpers import get_current_run_tree
+
+    job_id = initial_state.get('job_id', 'unknown')
+    instruction = initial_state.get('instruction', 'N/A')
+
+    # Add metadata to current run
+    run_tree = get_current_run_tree()
+    if run_tree:
+        run_tree.extra = {
+            "job_id": job_id,
+            "instruction": instruction,
+            "keyframe1": initial_state.get('keyframe1', ''),
+            "keyframe2": initial_state.get('keyframe2', ''),
+        }
+        run_tree.tags = ["telekinesis", f"job:{job_id}"]
+
+    logger.info(f"Starting Telekinesis pipeline for job: {job_id}")
+
+    if stream:
+        # Streaming mode: yield each step and return final state
+        result = None
+        for step_output in graph.stream(initial_state):
+            result = step_output
+            yield step_output
+        logger.info(f"Telekinesis pipeline completed for job: {job_id}")
+        return result
+    else:
+        # Blocking mode: return final state
+        result = graph.invoke(initial_state)
+        logger.info(f"Telekinesis pipeline completed for job: {job_id}")
+        return result
 
 
 def create_initial_state(

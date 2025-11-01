@@ -13,12 +13,16 @@ Expected outcome: Real frames generated with blurry/morphed quality
 import os
 import sys
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables (including LangSmith tracing config)
+load_dotenv()
 
 # Add backend to path
 backend_dir = Path(__file__).parent.parent / "backend"
 sys.path.insert(0, str(backend_dir))
 
-from backend.app.telekinesis.graph import build_telekinesis_graph
+from backend.app.telekinesis.graph import build_telekinesis_graph, run_telekinesis_pipeline
 from backend.app.telekinesis.state import AnimationState
 
 
@@ -89,7 +93,7 @@ def test_phase1_pipeline():
         result = None
         agent_count = 0
 
-        for step_output in graph.stream(initial_state):
+        for step_output in run_telekinesis_pipeline(graph, initial_state, stream=True):
             agent_count += 1
             agent_name = list(step_output.keys())[0]
             agent_state = step_output[agent_name]
@@ -238,5 +242,16 @@ def test_phase1_pipeline():
 
 
 if __name__ == "__main__":
-    success = test_phase1_pipeline()
-    sys.exit(0 if success else 1)
+    try:
+        success = test_phase1_pipeline()
+        sys.exit(0 if success else 1)
+    finally:
+        # Flush LangSmith traces before exit
+        try:
+            from langsmith import Client
+            client = Client()
+            print("\n[Flushing LangSmith traces...]")
+            client.flush()
+            print("[LangSmith traces flushed successfully]")
+        except Exception as e:
+            print(f"[Warning: Failed to flush LangSmith traces: {e}]")
