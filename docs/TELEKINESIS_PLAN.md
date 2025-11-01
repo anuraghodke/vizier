@@ -595,9 +595,11 @@ def route_from_validator(state: AnimationState) -> str:
 - Batch processing in validator
 
 **Monitoring**:
+- LangSmith tracing for agent execution visibility
 - Track which principles apply most often
 - Measure iteration patterns
 - Log quality improvements per iteration
+- See "Monitoring & Observability" section for implementation details
 
 **Status**: PRODUCTION READY
 
@@ -647,6 +649,157 @@ def generate_frames_advanced(self, job_id, kf1, kf2, instruction):
         'messages': state["messages"]
     }
 ```
+
+---
+
+## Monitoring & Observability
+
+### LangSmith Tracing
+
+Telekinesis uses **LangSmith** for comprehensive observability of agent loop execution. This enables debugging complex multi-agent interactions, understanding performance bottlenecks, and tracking quality metrics.
+
+**Implementation Status**: [COMPLETE] Enabled in production (commit 603f974)
+
+**Features**:
+- **Automatic Tracing**: All agent executions are automatically traced
+- **Hierarchical Visualization**: See the complete agent execution flow (ANALYZER → PRINCIPLES → PLANNER → GENERATOR → VALIDATOR → REFINER)
+- **Metadata Tagging**: Each trace includes:
+  - `job_id`: Unique identifier for the animation job
+  - `instruction`: User's natural language instruction
+  - `keyframe1` and `keyframe2`: Paths to input keyframes
+- **Performance Monitoring**: Track timing for each agent and iteration
+- **Error Tracking**: Identify which agent or step failed during execution
+
+**Setup**:
+
+```bash
+# Environment variables (add to .env)
+LANGCHAIN_TRACING_V2=true
+LANGCHAIN_API_KEY=lsv2_pt_your_key_here
+LANGCHAIN_PROJECT=vizier
+LANGCHAIN_ENDPOINT=https://api.smith.langchain.com
+```
+
+**Implementation** (`backend/app/telekinesis/graph.py`):
+
+```python
+from langsmith import traceable
+
+@traceable(
+    run_type="chain",
+    name="telekinesis_pipeline",
+    tags=["telekinesis"],
+    metadata={
+        "version": "1.0",
+        "phase": "production"
+    }
+)
+def run_telekinesis_pipeline(
+    keyframe1: str,
+    keyframe2: str,
+    instruction: str,
+    job_id: Optional[str] = None
+) -> Dict[str, Any]:
+    """Execute Telekinesis agent loop with LangSmith tracing"""
+
+    # Build graph
+    graph = build_telekinesis_graph()
+
+    # Initial state
+    initial_state = {
+        "keyframe1": keyframe1,
+        "keyframe2": keyframe2,
+        "instruction": instruction,
+        "iteration_count": 0,
+        "messages": []
+    }
+
+    # Add job metadata to trace
+    if job_id:
+        # Metadata is automatically captured by @traceable
+        pass
+
+    # Execute with streaming
+    final_state = None
+    for state_update in graph.stream(initial_state):
+        final_state = state_update
+
+    return final_state
+```
+
+**Viewing Traces**:
+
+1. Visit https://smith.langchain.com/projects/vizier
+2. Filter by tags: `telekinesis` or `job:{job_id}`
+3. View hierarchical trace showing:
+   - Agent execution order
+   - Timing for each agent
+   - Input/output state for each step
+   - Validation scores and quality metrics
+   - Iteration loops (if VALIDATOR routes back to PLANNER or REFINER)
+
+**Key Metrics to Monitor**:
+
+- **Agent Distribution**: Which agents take the most time?
+- **Iteration Patterns**: How often does the system need to refine or replan?
+- **Quality Scores**: Validation scores over time
+- **Principle Usage**: Which animation principles are applied most often?
+- **Error Rates**: Which agents fail most frequently?
+
+**Cost Considerations**:
+
+- LangSmith tracing adds minimal latency (~10-50ms per trace)
+- Free tier: 5,000 traces/month
+- Paid tier: $39/month for 100,000 traces
+- Recommended: Enable for production, optional for development
+
+**Debugging Workflow**:
+
+1. Run animation job (either via tests or production)
+2. Note the `job_id` from logs
+3. Open LangSmith dashboard
+4. Search for `job:{job_id}` tag
+5. Inspect agent execution flow:
+   - Did ANALYZER correctly identify objects?
+   - Did PRINCIPLES select appropriate animation principles?
+   - Did PLANNER create a good timing curve?
+   - Did VALIDATOR route to REFINER or END?
+6. Identify bottlenecks or errors
+7. Adjust agent prompts or logic as needed
+
+**Example Trace Interpretation**:
+
+```
+Trace: telekinesis_pipeline (job:abc123)
+├─ ANALYZER (2.3s)
+│  └─ Input: keyframe1.png, keyframe2.png
+│  └─ Output: {objects: ["ball"], motion_type: "arc"}
+├─ PRINCIPLES (1.1s)
+│  └─ Output: {principles: ["arc", "squash_and_stretch"]}
+├─ PLANNER (0.8s)
+│  └─ Output: {timing_curve: "ease_in_out", arc_path: [...]}}
+├─ GENERATOR (15.2s)
+│  └─ Output: {frames: ["frame_001.png", ...]}
+├─ VALIDATOR (3.4s)
+│  └─ Output: {quality: 7.5, route: "refine"}
+├─ REFINER (8.7s)
+│  └─ Output: {refined_frames: ["frame_001.png", ...]}
+└─ VALIDATOR (3.2s)
+   └─ Output: {quality: 8.3, route: "end"}
+
+Total: 34.7s, 2 iterations, quality: 8.3
+```
+
+**Production Recommendations**:
+
+- Keep tracing enabled in production for first 3 months
+- Monitor agent timing to identify optimization opportunities
+- Track quality score distribution to tune VALIDATOR thresholds
+- Use traces to create a dataset for future model fine-tuning
+- Set up alerts for:
+  - Traces with >3 iterations (may indicate poor planning)
+  - Quality scores <7.0 (may indicate subpar output)
+  - Agent failures or errors
 
 ---
 

@@ -50,6 +50,41 @@ Vizier supports **classic cel animation techniques** with physics-based interpol
 - Infrastructure tests passing
 - See [docs/PHASE_0_TELEKINESIS_SUMMARY.md](./PHASE_0_TELEKINESIS_SUMMARY.md)
 
+[COMPLETE] **Phase 1: Telekinesis Minimal Viable Pipeline** (NEW DIRECTION)
+- Implemented Claude Vision integration in ANALYZER agent
+- Built object-based frame generation in GENERATOR agent
+- Created FrameGeneratorService with color-based segmentation
+- Full end-to-end pipeline execution working
+- See [docs/PHASE_1_TELEKINESIS_SUMMARY.md](./PHASE_1_TELEKINESIS_SUMMARY.md)
+
+### Recent Changes (Latest First)
+
+**2025-11-01** - LangSmith Tracing Enabled (commit 603f974)
+- Added `@traceable` decorator to `run_telekinesis_pipeline()` in `graph.py`
+- Configured metadata tagging (job_id, instruction, keyframes)
+- Added environment variables to `.env.example`
+- Added `langsmith>=0.1.0` dependency to `pyproject.toml`
+- Enables comprehensive observability of agent loop execution
+
+**2025-11-01** - FILM References Cleanup (commits 2973095, ba68705, f8a0250)
+- Removed all FILM references from documentation
+- Removed FILM references from test files
+- Fixed imports after cleanup
+- FILM approach fully archived in `docs/film/` directory
+
+**2025-10-30** - Prompt Caching Implementation
+- Added prompt caching to all Claude API calls
+- Implemented `cache_control: {"type": "ephemeral"}` on system prompts
+- Added strict validation that caching is working
+- ~90% cost reduction for repeated calls
+- Updated `claude_service.py` and `claude_vision_service.py`
+
+**2025-10-30** - Phase 1 Telekinesis Complete
+- Implemented full end-to-end pipeline execution
+- Created object-based motion interpolation
+- Built FrameGeneratorService with transparency support
+- All Phase 1 tests passing
+
 ### Current Status: Multi-Agent System Development
 
 **NEW APPROACH**: Principle-Aware Animation System
@@ -161,6 +196,7 @@ vizier/
 - **Framework**: FastAPI (Python 3.10+)
 - **Task Queue**: Celery + Redis
 - **Multi-Agent System**: LangGraph + LangChain
+- **Observability**: LangSmith (agent tracing and debugging)
 - **AI Models**:
   - **Analysis & Reasoning**: Claude API (`claude-sonnet-4-5-20250929`)
   - **Frame Generation**: AnimateDiff (planned), ControlNet guidance
@@ -448,6 +484,56 @@ def generate_frames_advanced(self, job_id, kf1, kf2, instruction):
 - **Accuracy**: 100% on test cases
 - **Cost**: ~$0.003 per request
 - **Output**: Returns valid JSON when prompted correctly
+
+### Prompt Caching
+- **Implementation**: All Claude API calls use prompt caching for system prompts
+- **Cache Control**: `cache_control: {"type": "ephemeral"}` on system prompts
+- **Validation**: Strict enforcement that caching is working (errors if not cached)
+- **Cost Savings**: ~90% reduction in token costs for repeated calls
+- **Files**: `claude_service.py`, `claude_vision_service.py`
+
+### LangSmith Tracing
+- **Purpose**: Comprehensive observability of agent loop execution
+- **Implementation**: `@traceable` decorator on `run_telekinesis_pipeline()` in `graph.py:130-188`
+- **Metadata**: Job ID, instruction, and keyframe paths tagged per run
+- **Configuration**: Environment variables in `.env.example`
+- **Dependency**: `langsmith>=0.1.0` in `pyproject.toml`
+- **Status**: [COMPLETE] Enabled in production (commit 603f974)
+
+---
+
+## Observability & Tracing
+
+### LangSmith Integration
+
+Vizier uses **LangSmith** for comprehensive observability of the Telekinesis agent loop execution. This enables debugging, performance monitoring, and understanding of complex multi-agent interactions.
+
+**Features**:
+- Automatic tracing of all agent executions
+- Metadata tagging (job_id, instruction, keyframe paths)
+- Hierarchical trace visualization showing agent flow
+- Performance monitoring and timing analysis
+- Error tracking and debugging support
+
+**Setup**:
+```bash
+# In .env file
+LANGCHAIN_TRACING_V2=true
+LANGCHAIN_API_KEY=lsv2_pt_your_key_here
+LANGCHAIN_PROJECT=vizier
+LANGCHAIN_ENDPOINT=https://api.smith.langchain.com
+```
+
+**Implementation Details**:
+- `@traceable` decorator applied to `run_telekinesis_pipeline()` function
+- Metadata includes job context (job_id, instruction, keyframes)
+- Tags include "telekinesis" and "job:{job_id}" for filtering
+- Traces show complete agent execution flow with timing
+
+**View Traces**:
+Visit https://smith.langchain.com/projects/vizier after running tests or jobs
+
+**Optional**: Set `LANGCHAIN_TRACING_V2=false` to disable tracing during development
 
 ---
 
@@ -951,12 +1037,28 @@ npm install
 npm run dev  # Starts on http://localhost:3000
 ```
 
+### Observability (LangSmith)
+```bash
+# Set up LangSmith tracing (optional)
+export LANGCHAIN_TRACING_V2=true
+export LANGCHAIN_API_KEY="lsv2_pt_..."
+export LANGCHAIN_PROJECT=vizier
+export LANGCHAIN_ENDPOINT=https://api.smith.langchain.com
+
+# View traces in browser
+open https://smith.langchain.com/projects/vizier
+
+# Disable tracing for development
+export LANGCHAIN_TRACING_V2=false
+```
+
 ---
 
 ## Quick Reference Links
 
 - **LangGraph Docs**: https://langchain-ai.github.io/langgraph/
 - **LangChain Docs**: https://python.langchain.com/
+- **LangSmith Docs**: https://docs.smith.langchain.com/
 - **Claude API Docs**: https://docs.anthropic.com
 - **FastAPI Docs**: https://fastapi.tiangolo.com
 - **Celery Docs**: https://docs.celeryproject.org

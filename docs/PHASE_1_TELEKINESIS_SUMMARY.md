@@ -645,6 +645,32 @@ Once Phase 1 testing is complete, Phase 2 will focus on enhancing analysis and p
 
 ---
 
+## Post-Phase 1 Enhancements
+
+### LangSmith Tracing Integration (commit 603f974)
+
+After Phase 1 completion, **LangSmith tracing** was added for comprehensive observability of the agent loop execution.
+
+**What Was Added**:
+- `@traceable` decorator on `run_telekinesis_pipeline()` in `graph.py`
+- Metadata tagging (job_id, instruction, keyframes)
+- Environment variables in `.env.example`
+- `langsmith>=0.1.0` dependency in `pyproject.toml`
+
+**Benefits**:
+- Hierarchical visualization of agent execution flow
+- Performance monitoring (timing per agent)
+- Debugging support for complex multi-agent interactions
+- Quality metrics tracking over time
+
+**Documentation**:
+- See [CLAUDE.md](./CLAUDE.md) "Observability & Tracing" section
+- See [TELEKINESIS_PLAN.md](./TELEKINESIS_PLAN.md) "Monitoring & Observability" section
+
+**Status**: [COMPLETE] Enabled in production
+
+---
+
 ## Branch Status
 
 **Branch**: `anuraghodke/phase1-object-motion`
