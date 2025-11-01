@@ -49,12 +49,16 @@ def analyzer_agent(state: AnimationState) -> AnimationState:
     }
 
     state["analysis"] = analysis
-    state["messages"].append({
+
+    # Append message to existing messages
+    messages = state.get("messages", []).copy()
+    messages.append({
         "agent": "analyzer",
         "timestamp": datetime.now().isoformat(),
         "action": "completed_analysis",
         "details": "Phase 0 stub - placeholder analysis returned"
     })
+    state["messages"] = messages
 
     logger.info("ANALYZER agent completed")
     return state
@@ -105,12 +109,16 @@ def principles_agent(state: AnimationState) -> AnimationState:
     }
 
     state["animation_principles"] = animation_principles
-    state["messages"].append({
+
+    # Append message to existing messages
+    messages = state.get("messages", []).copy()
+    messages.append({
         "agent": "principles",
         "timestamp": datetime.now().isoformat(),
         "action": "identified_principles",
         "details": "Phase 0 stub - hardcoded principles returned"
     })
+    state["messages"] = messages
 
     logger.info("PRINCIPLES agent completed")
     return state
@@ -166,12 +174,16 @@ def planner_agent(state: AnimationState) -> AnimationState:
     }
 
     state["plan"] = plan
-    state["messages"].append({
+
+    # Append message to existing messages
+    messages = state.get("messages", []).copy()
+    messages.append({
         "agent": "planner",
         "timestamp": datetime.now().isoformat(),
         "action": "created_plan",
         "details": f"Phase 0 stub - simple {num_frames}-frame linear plan"
     })
+    state["messages"] = messages
 
     logger.info("PLANNER agent completed")
     return state
@@ -203,12 +215,16 @@ def generator_agent(state: AnimationState) -> AnimationState:
     frames = [f"/outputs/{job_id}/frame_{i:03d}.png" for i in range(num_frames)]
 
     state["frames"] = frames
-    state["messages"].append({
+
+    # Append message to existing messages
+    messages = state.get("messages", []).copy()
+    messages.append({
         "agent": "generator",
         "timestamp": datetime.now().isoformat(),
         "action": "generated_frames",
         "details": f"Phase 0 stub - {num_frames} placeholder frames"
     })
+    state["messages"] = messages
 
     logger.info(f"GENERATOR agent completed - {num_frames} frames")
     return state
@@ -256,12 +272,16 @@ def validator_agent(state: AnimationState) -> AnimationState:
     }
 
     state["validation"] = validation
-    state["messages"].append({
+
+    # Append message to existing messages
+    messages = state.get("messages", []).copy()
+    messages.append({
         "agent": "validator",
         "timestamp": datetime.now().isoformat(),
         "action": "validated_frames",
         "details": f"Phase 0 stub - quality score: {validation['overall_quality_score']}"
     })
+    state["messages"] = messages
 
     logger.info("VALIDATOR agent completed - quality score: 8.0")
     return state
@@ -290,12 +310,16 @@ def refiner_agent(state: AnimationState) -> AnimationState:
     refined_frames = [f.replace("frame_", "refined_frame_") for f in frames]
 
     state["refined_frames"] = refined_frames
-    state["messages"].append({
+
+    # Append message to existing messages
+    messages = state.get("messages", []).copy()
+    messages.append({
         "agent": "refiner",
         "timestamp": datetime.now().isoformat(),
         "action": "refined_frames",
         "details": "Phase 0 stub - frames copied without refinement"
     })
+    state["messages"] = messages
 
     logger.info("REFINER agent completed")
     return state

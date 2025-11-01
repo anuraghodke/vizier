@@ -5,8 +5,7 @@ This state is passed between agents and accumulates information
 about the animation generation process.
 """
 
-from typing import TypedDict, List, Dict, Any, Annotated
-import operator
+from typing import TypedDict, List, Dict, Any
 
 
 class AnimationState(TypedDict):
@@ -145,10 +144,10 @@ class AnimationState(TypedDict):
     Used to prevent infinite loops (max 3 iterations).
     """
 
-    messages: Annotated[List[Dict[str, Any]], operator.add]
+    messages: List[Dict[str, Any]]
     """
     Log of agent actions and decisions.
-    Uses operator.add so each agent can append messages.
+    Each agent appends to this list during execution.
 
     Example entry:
     {
