@@ -15,8 +15,8 @@ import os
 # Add backend to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../backend"))
 
-from app.telekinesis.graph import build_telekinesis_graph, create_initial_state
-from app.telekinesis.logging_config import setup_telekinesis_logging
+from backend.app.telekinesis.graph import build_telekinesis_graph, create_initial_state
+from backend.app.telekinesis.logging_config import setup_telekinesis_logging
 
 
 def test_graph_builds():

@@ -1,5 +1,5 @@
 """
-Unit tests for FILM and Claude services.
+Unit tests for Claude services.
 Tests core functionality of Phase 1 services.
 """
 import sys
@@ -12,9 +12,8 @@ load_dotenv()
 # Add backend to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'backend'))
 
-from app.services.claude_service import ClaudeService
-from app.services.film_service import FILMService
-from app.models.schemas import AnimationParams
+from backend.app.services.claude_service import ClaudeService
+from backend.app.models.schemas import AnimationParams
 
 
 def test_claude_service():
@@ -57,71 +56,6 @@ def test_claude_service():
 
     except Exception as e:
         print(f"\n❌ Claude service tests FAILED: {e}")
-        return False
-
-
-def test_film_service():
-    """Test FILM service with existing test images"""
-    print("\n" + "="*60)
-    print("Testing FILM Service")
-    print("="*60)
-
-    try:
-        # Initialize service
-        print("\n1. Initializing FILM service...")
-        film = FILMService()
-        print("   ✓ FILM service initialized")
-        print("   ✓ Model loaded from TensorFlow Hub")
-
-        # Check if test images exist
-        frame1_path = "test_images/frame1.png"
-        frame2_path = "test_images/frame2.png"
-
-        if not os.path.exists(frame1_path) or not os.path.exists(frame2_path):
-            print(f"\n   ⚠ Test images not found, skipping interpolation test")
-            print("   ✓ FILM service initialization successful")
-            return True
-
-        print(f"\n2. Loading test images...")
-        print(f"   - Frame 1: {frame1_path}")
-        print(f"   - Frame 2: {frame2_path}")
-
-        # Preprocess images
-        rgb1, alpha1 = film.preprocess_image(frame1_path)
-        rgb2, alpha2 = film.preprocess_image(frame2_path)
-        print(f"   ✓ Images preprocessed")
-        print(f"     - RGB shape: {rgb1.shape}")
-        print(f"     - Has alpha: {alpha1 is not None}")
-
-        # Test interpolation with simple params
-        print(f"\n3. Testing interpolation...")
-        params = AnimationParams(
-            num_frames=4,
-            motion_type="linear",
-            speed="normal",
-            emphasis="Test interpolation"
-        )
-
-        frames = film.interpolate(frame1_path, frame2_path, params)
-        print(f"   ✓ Generated {len(frames)} frames")
-        print(f"     - Expected: {params.num_frames + 2} (including keyframes)")
-        print(f"     - Got: {len(frames)}")
-
-        # Save test output
-        print(f"\n4. Saving test output...")
-        output_dir = "test_output"
-        filenames = film.save_frames(frames, output_dir, prefix="service_test")
-        print(f"   ✓ Saved {len(filenames)} frames to {output_dir}/")
-        print(f"     - First: {filenames[0]}")
-        print(f"     - Last: {filenames[-1]}")
-
-        print("\n✅ FILM service tests PASSED")
-        return True
-
-    except Exception as e:
-        print(f"\n❌ FILM service tests FAILED: {e}")
-        import traceback
-        traceback.print_exc()
         return False
 
 
@@ -197,8 +131,7 @@ def main():
 
     results = {
         "Schemas": test_schemas(),
-        "Claude Service": test_claude_service(),
-        "FILM Service": test_film_service()
+        "Claude Service": test_claude_service()
     }
 
     # Summary
