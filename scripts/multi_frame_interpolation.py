@@ -278,6 +278,36 @@ def generate_multi_frame_sequence(
     return all_frames
 
 
+# ============================================================================
+# CONFIGURATION - EDIT THESE VARIABLES
+# ============================================================================
+
+# Specify folder containing keyframe images (absolute or relative to project root)
+# Images should be enumerated with trailing numbers (e.g., frame-1.png, frame-2.png)
+KEYFRAME_FOLDER = "tests/test_images/bouncing_ball"
+
+# Specify number of frames to generate between each consecutive pair
+# Option 1: Use a single value (applies to all pairs)
+FRAMES_BETWEEN = 1
+
+# Option 2: Use an array to specify different counts for each pair
+# Length must be (number of keyframes) - 1
+# If set, this overrides FRAMES_BETWEEN
+# Example: For 4 keyframes, [1, 5, 2] means:
+#   - 1 frame between keyframes 1 and 2
+#   - 5 frames between keyframes 2 and 3
+#   - 2 frames between keyframes 3 and 4
+FRAME_COUNTS = None 
+
+# Output directory for generated sequence
+OUTPUT_DIR = "outputs/bouncing_ball_002"
+
+# Timing curve: "linear", "ease-in-out", "ease-in", "ease-out"
+TIMING_CURVE = "linear"
+
+# ============================================================================
+
+
 @app.command()
 def main(
     keyframe_folder: str = typer.Argument(
@@ -290,9 +320,14 @@ def main(
         help="Output directory for generated frames"
     ),
     frames_between: Optional[int] = typer.Option(
-        1,
+        None,
         "--frames-between", "-n",
         help="Number of frames to generate between each keyframe pair (default: 1)"
+    ),
+    frame_counts: Optional[List[int]] = typer.Option(
+        None,
+        "--frame-counts", "-c",
+        help="Array of frame counts for each pair (e.g., -c 1 -c 5 -c 2). Overrides --frames-between."
     ),
     timing_curve: str = typer.Option(
         "linear",
@@ -306,8 +341,12 @@ def main(
     Loads keyframe images from KEYFRAME_FOLDER (sorted by trailing number)
     and generates interpolated frames between each consecutive pair.
 
-    Example:
+    Examples:
+        # Uniform spacing (5 frames between each pair)
         python scripts/multi_frame_interpolation.py tests/test_images/bouncing_ball -n 5 -o outputs/bouncing_ball
+
+        # Custom spacing for each pair
+        python scripts/multi_frame_interpolation.py tests/test_images/bouncing_ball -c 1 -c 5 -c 2 -o outputs/bouncing_ball
     """
     # Convert relative folder path to absolute
     folder_path = keyframe_folder
@@ -319,14 +358,24 @@ def main(
         logger.info("Loading keyframes from folder...")
         keyframe_paths = load_keyframes_from_folder(folder_path)
 
-        # Generate frame counts based on frames_between parameter
-        frame_counts = [frames_between] * (len(keyframe_paths) - 1)
-        logger.info(f"Generating {frames_between} frame(s) between each keyframe pair")
+        # Determine frame counts
+        if frame_counts is not None:
+            # Use custom array
+            counts = frame_counts
+            logger.info(f"Using custom frame counts: {counts}")
+        elif frames_between is not None:
+            # Use uniform spacing
+            counts = [frames_between] * (len(keyframe_paths) - 1)
+            logger.info(f"Generating {frames_between} frame(s) between each keyframe pair")
+        else:
+            # Default to 1
+            counts = [1] * (len(keyframe_paths) - 1)
+            logger.info(f"Generating 1 frame between each keyframe pair (default)")
 
         # Run interpolation
         generated_frames = generate_multi_frame_sequence(
             keyframe_paths=keyframe_paths,
-            frame_counts=frame_counts,
+            frame_counts=counts,
             output_dir=output_dir,
             timing_curve=timing_curve
         )
@@ -341,4 +390,48 @@ def main(
 
 
 if __name__ == "__main__":
-    app()
+    # If no CLI arguments provided, use configuration variables
+    # Otherwise, use typer CLI
+    if len(sys.argv) == 1:
+        # Running with no arguments - use config variables
+        folder_path = KEYFRAME_FOLDER
+        if not os.path.isabs(folder_path):
+            folder_path = str(project_root / folder_path)
+
+        try:
+            logger.info("Using configuration from script variables...")
+            logger.info(f"  KEYFRAME_FOLDER: {KEYFRAME_FOLDER}")
+            logger.info(f"  FRAMES_BETWEEN: {FRAMES_BETWEEN}")
+            logger.info(f"  OUTPUT_DIR: {OUTPUT_DIR}")
+            logger.info(f"  TIMING_CURVE: {TIMING_CURVE}")
+
+            # Load keyframes from folder
+            logger.info("\nLoading keyframes from folder...")
+            keyframe_paths = load_keyframes_from_folder(folder_path)
+
+            # Determine frame counts
+            if FRAME_COUNTS is not None:
+                frame_counts = FRAME_COUNTS
+                logger.info(f"Using custom frame counts: {frame_counts}")
+            else:
+                frame_counts = [FRAMES_BETWEEN] * (len(keyframe_paths) - 1)
+                logger.info(f"Generating {FRAMES_BETWEEN} frame(s) between each keyframe pair")
+
+            # Run interpolation
+            generated_frames = generate_multi_frame_sequence(
+                keyframe_paths=keyframe_paths,
+                frame_counts=frame_counts,
+                output_dir=OUTPUT_DIR,
+                timing_curve=TIMING_CURVE
+            )
+
+            print("\nSuccess! Generated frames:")
+            for frame in generated_frames:
+                print(f"  {frame}")
+
+        except Exception as e:
+            logger.error(f"Interpolation failed: {e}")
+            sys.exit(1)
+    else:
+        # Use typer CLI
+        app()
