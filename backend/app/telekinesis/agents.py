@@ -20,8 +20,8 @@ from .console import (
     print_refinement_summary,
     print_phase_badge,
 )
-from backend.app.services.claude_vision_service import get_vision_service
-from backend.app.services.frame_generator_service import get_generator_service
+from app.services.claude_vision_service import get_vision_service
+from app.services.frame_generator_service import get_generator_service
 
 logger = logging.getLogger(__name__)
 

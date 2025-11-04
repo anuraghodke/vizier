@@ -8,12 +8,12 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better caching
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy pyproject.toml and README for dependencies
+COPY pyproject.toml README.md ./
+RUN pip install --no-cache-dir -e .
 
 # Copy application code
-COPY . .
+COPY backend/ .
 
 # Create directories for uploads and outputs
 RUN mkdir -p /app/uploads /app/outputs
