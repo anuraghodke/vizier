@@ -351,7 +351,7 @@ FRAME_COUNTS = None
 OUTPUT_DIR = None
 
 # Timing curve: "linear", "ease-in-out", "ease-in", "ease-out"
-TIMING_CURVE = "ease-in-out"
+TIMING_CURVE = "linear"
 
 # ============================================================================
 
