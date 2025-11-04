@@ -138,10 +138,15 @@ export default function App() {
         )}
 
         {/* Preview Canvas */}
-        <PreviewCanvas />
+        <PreviewCanvas
+          jobId={jobStatus?.job_id}
+          frames={jobStatus?.frames}
+        />
 
         {/* Timeline */}
-        <InterpolationTimeline />
+        <InterpolationTimeline
+          frames={jobStatus?.frames}
+        />
       </div>
     </div>
   );
