@@ -16,9 +16,11 @@ Example usage:
 
 import sys
 import os
+import re
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 import logging
+import typer
 
 # Add parent directory to path for imports
 script_dir = Path(__file__).parent
@@ -33,6 +35,68 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+# Create typer app
+app = typer.Typer(help="Multi-frame interpolation tool for generating frames between keyframe images.")
+
+
+def load_keyframes_from_folder(folder_path: str) -> List[str]:
+    """
+    Load and sort keyframe images from a folder.
+
+    Expects files to be enumerated with trailing numbers (e.g., frame-1.png, frame-2.png).
+    Supports common image formats: png, jpg, jpeg, webp.
+
+    Args:
+        folder_path: Path to folder containing keyframe images
+
+    Returns:
+        Sorted list of absolute paths to keyframe images
+
+    Raises:
+        ValueError: If folder doesn't exist or contains no valid images
+    """
+    folder = Path(folder_path)
+
+    if not folder.exists():
+        raise ValueError(f"Folder not found: {folder_path}")
+
+    if not folder.is_dir():
+        raise ValueError(f"Path is not a directory: {folder_path}")
+
+    # Supported image extensions
+    image_extensions = {'.png', '.jpg', '.jpeg', '.webp'}
+
+    # Find all image files
+    image_files = [
+        f for f in folder.iterdir()
+        if f.is_file() and f.suffix.lower() in image_extensions
+    ]
+
+    if not image_files:
+        raise ValueError(f"No image files found in folder: {folder_path}")
+
+    # Sort files by trailing number
+    def extract_number(filepath: Path) -> int:
+        """Extract the trailing number from filename for sorting."""
+        # Remove extension and get the stem
+        stem = filepath.stem
+        # Find trailing number in the filename
+        match = re.search(r'(\d+)$', stem)
+        if match:
+            return int(match.group(1))
+        # If no trailing number, use 0 (will sort to beginning)
+        logger.warning(f"No trailing number found in {filepath.name}, sorting to beginning")
+        return 0
+
+    # Sort by trailing number
+    sorted_files = sorted(image_files, key=extract_number)
+
+    logger.info(f"Found {len(sorted_files)} keyframes in {folder_path}:")
+    for i, f in enumerate(sorted_files):
+        logger.info(f"  {i+1}. {f.name}")
+
+    return [str(f.absolute()) for f in sorted_files]
 
 
 def validate_inputs(keyframe_paths: List[str], frame_counts: List[int]) -> None:
@@ -213,65 +277,67 @@ def generate_multi_frame_sequence(
     return all_frames
 
 
-# ============================================================================
-# CONFIGURATION - EDIT THESE VARIABLES
-# ============================================================================
-
-# Specify your keyframe image paths (absolute or relative to project root)
-KEYFRAME_PATHS = [
-    "tests/test_images/frame1.png",
-    "tests/test_images/frame2.png",
-    # Add more keyframes here...
-    # "tests/test_images/frame3.png",
-    # "tests/test_images/frame4.png",
-]
-
-# Specify number of frames to generate between each consecutive pair
-# Length must be len(KEYFRAME_PATHS) - 1
-FRAME_COUNTS = [
-    5,  # Number of frames between keyframe 1 and 2
-    # Add more counts here corresponding to each pair...
-    # 2,  # Number of frames between keyframe 2 and 3
-    # 0,  # Number of frames between keyframe 3 and 4
-]
-
-# Output directory for generated sequence
-OUTPUT_DIR = "outputs/my_interpolation_sequence"
-
-# Timing curve: "linear", "ease-in-out", "ease-in", "ease-out"
-TIMING_CURVE = "linear"
-
-# ============================================================================
-
-
-if __name__ == "__main__":
+@app.command()
+def main(
+    keyframe_folder: str = typer.Argument(
+        ...,
+        help="Folder containing keyframe images (enumerated with trailing numbers, e.g., frame-1.png, frame-2.png)"
+    ),
+    output_dir: str = typer.Option(
+        "outputs/interpolation_output",
+        "--output-dir", "-o",
+        help="Output directory for generated frames"
+    ),
+    frames_between: Optional[int] = typer.Option(
+        1,
+        "--frames-between", "-n",
+        help="Number of frames to generate between each keyframe pair (default: 1)"
+    ),
+    timing_curve: str = typer.Option(
+        "linear",
+        "--timing-curve", "-t",
+        help="Timing curve for interpolation: linear, ease-in-out, ease-in, ease-out"
+    ),
+):
     """
-    Run the multi-frame interpolation with the configured parameters.
+    Generate interpolated frames between multiple keyframe images.
 
-    Edit the configuration variables above to specify your keyframes and
-    interpolation settings.
+    Loads keyframe images from KEYFRAME_FOLDER (sorted by trailing number)
+    and generates interpolated frames between each consecutive pair.
+
+    Example:
+        python scripts/multi_frame_interpolation.py tests/test_images/bouncing_ball -n 5 -o outputs/bouncing_ball
     """
-
-    # Convert relative paths to absolute paths
-    absolute_keyframe_paths = []
-    for path in KEYFRAME_PATHS:
-        if not os.path.isabs(path):
-            path = str(project_root / path)
-        absolute_keyframe_paths.append(path)
+    # Convert relative folder path to absolute
+    folder_path = keyframe_folder
+    if not os.path.isabs(folder_path):
+        folder_path = str(project_root / folder_path)
 
     try:
+        # Load keyframes from folder
+        logger.info("Loading keyframes from folder...")
+        keyframe_paths = load_keyframes_from_folder(folder_path)
+
+        # Generate frame counts based on frames_between parameter
+        frame_counts = [frames_between] * (len(keyframe_paths) - 1)
+        logger.info(f"Generating {frames_between} frame(s) between each keyframe pair")
+
         # Run interpolation
         generated_frames = generate_multi_frame_sequence(
-            keyframe_paths=absolute_keyframe_paths,
-            frame_counts=FRAME_COUNTS,
-            output_dir=OUTPUT_DIR,
-            timing_curve=TIMING_CURVE
+            keyframe_paths=keyframe_paths,
+            frame_counts=frame_counts,
+            output_dir=output_dir,
+            timing_curve=timing_curve
         )
 
-        print("\nSuccess! Generated frames:")
+        typer.echo("\nSuccess! Generated frames:")
         for frame in generated_frames:
-            print(f"  {frame}")
+            typer.echo(f"  {frame}")
 
     except Exception as e:
         logger.error(f"Interpolation failed: {e}")
-        sys.exit(1)
+        raise typer.Exit(code=1)
+
+
+if __name__ == "__main__":
+    app()

@@ -58,6 +58,7 @@ outputs/
 
 # Test output (generated during testing)
 tests/test_output/
+tests/test_images/
 
 # FILM model files (large binaries)
 models/film/
