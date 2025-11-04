@@ -101,6 +101,9 @@ class FrameGeneratorService:
                 - color: (r, g, b) average color
                 - bbox: (x1, y1, x2, y2) bounding box
                 - contour: Largest contour points
+                - width: Object width in pixels
+                - height: Object height in pixels
+                - scale: Baseline scale factor (1.0)
             or None if no object detected
         """
         # Convert to RGB for processing (ignore alpha initially)
@@ -170,8 +173,38 @@ class FrameGeneratorService:
             "centroid": (cx, cy),
             "color": avg_color,
             "bbox": (x1, y1, x2, y2),
-            "contour": largest_contour
+            "contour": largest_contour,
+            "width": w,
+            "height": h,
+            "scale": 1.0
         }
+
+    def _calculate_scale_factor(
+        self,
+        obj1: Dict[str, Any],
+        obj2: Dict[str, Any]
+    ) -> float:
+        """
+        Calculate relative scale factor between two objects.
+
+        Uses average of width and height to compute scale ratio.
+
+        Args:
+            obj1: Object properties from keyframe 1
+            obj2: Object properties from keyframe 2
+
+        Returns:
+            Scale ratio (obj2_size / obj1_size)
+        """
+        # Calculate average dimension for each object
+        size1 = (obj1["width"] + obj1["height"]) / 2.0
+        size2 = (obj2["width"] + obj2["height"]) / 2.0
+
+        # Avoid division by zero
+        if size1 == 0:
+            return 1.0
+
+        return size2 / size1
 
     def _render_object_frame(
         self,
@@ -181,7 +214,10 @@ class FrameGeneratorService:
         t: float
     ) -> np.ndarray:
         """
-        Render a frame with object at interpolated position and color.
+        Render a frame with object at interpolated position, color, and size.
+
+        Shape remains constant (contour from obj1), but is uniformly scaled
+        to match the size change between keyframes.
 
         Args:
             canvas_shape: (height, width) of output frame
@@ -215,21 +251,32 @@ class FrameGeneratorService:
         interp_b = int((1 - t) * b1 + t * b2)
         interp_color = (interp_r, interp_g, interp_b)
 
-        # Get object shape from keyframe 1 (assume shape doesn't change much)
+        # Get object shape from keyframe 1 (shape stays constant)
         contour = obj1["contour"]
-
-        # Calculate translation offset
         orig_x, orig_y = obj1["centroid"]
-        offset_x = interp_x - orig_x
-        offset_y = interp_y - orig_y
 
-        # Translate contour to new position
-        translated_contour = contour.copy()
-        translated_contour[:, :, 0] += offset_x
-        translated_contour[:, :, 1] += offset_y
+        # Calculate scale factor between keyframes
+        scale_ratio = self._calculate_scale_factor(obj1, obj2)
+
+        # Interpolate scale factor (1.0 at t=0, scale_ratio at t=1)
+        interp_scale = (1 - t) * 1.0 + t * scale_ratio
+
+        # Transform contour: scale first (around centroid), then translate
+        # Step 1: Center contour at origin
+        centered_contour = contour.copy().astype(np.float32)
+        centered_contour[:, :, 0] -= orig_x
+        centered_contour[:, :, 1] -= orig_y
+
+        # Step 2: Apply uniform scale
+        scaled_contour = centered_contour * interp_scale
+
+        # Step 3: Translate to interpolated position
+        final_contour = scaled_contour.copy()
+        final_contour[:, :, 0] += interp_x
+        final_contour[:, :, 1] += interp_y
 
         # Convert contour to list of tuples for PIL
-        points = [(int(pt[0][0]), int(pt[0][1])) for pt in translated_contour]
+        points = [(int(pt[0][0]), int(pt[0][1])) for pt in final_contour]
 
         # Draw filled polygon with interpolated color
         if len(points) >= 3:
@@ -316,10 +363,19 @@ class FrameGeneratorService:
             raise ValueError("Could not detect moving objects in keyframes")
 
         logger.info(
-            f"GENERATOR: Object 1 at {obj1['centroid']}, color {obj1['color']}"
+            f"GENERATOR: Object 1 at {obj1['centroid']}, "
+            f"size {obj1['width']}x{obj1['height']}, color {obj1['color']}"
         )
         logger.info(
-            f"GENERATOR: Object 2 at {obj2['centroid']}, color {obj2['color']}"
+            f"GENERATOR: Object 2 at {obj2['centroid']}, "
+            f"size {obj2['width']}x{obj2['height']}, color {obj2['color']}"
+        )
+
+        # Calculate and log scale change
+        scale_ratio = self._calculate_scale_factor(obj1, obj2)
+        logger.info(
+            f"GENERATOR: Scale change detected: {scale_ratio:.2f}x "
+            f"({'growing' if scale_ratio > 1.0 else 'shrinking' if scale_ratio < 1.0 else 'constant'})"
         )
 
         # Extract plan parameters
