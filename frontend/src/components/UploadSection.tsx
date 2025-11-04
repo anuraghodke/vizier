@@ -5,10 +5,10 @@ export function UploadSection() {
   return (
     <div className="grid grid-cols-2 gap-4">
       {/* Keyframe 1 */}
-      <Card className="p-6 border-2 border-dashed border-purple-200 bg-white hover:border-purple-300 transition-colors cursor-pointer">
+      <Card className="p-6 border-2 border-dashed border-blue-200 bg-white hover:border-purple-200 transition-colors cursor-pointer">
         <div className="flex flex-col items-center justify-center gap-3">
-          <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
-            <Upload className="h-5 w-5 text-purple-500" />
+          <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+            <Upload className="h-5 w-5 text-blue-500" />
           </div>
           <div className="text-center">
             <p className="text-sm text-zinc-900">Keyframe 1</p>
@@ -18,7 +18,7 @@ export function UploadSection() {
       </Card>
       
       {/* Keyframe 2 */}
-      <Card className="p-6 border-2 border-dashed border-blue-200 bg-white hover:border-blue-300 transition-colors cursor-pointer">
+      <Card className="p-6 border-2 border-dashed border-blue-200 bg-white hover:border-purple-200 transition-colors cursor-pointer">
         <div className="flex flex-col items-center justify-center gap-3">
           <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
             <Upload className="h-5 w-5 text-blue-500" />

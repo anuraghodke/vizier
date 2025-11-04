@@ -15,11 +15,11 @@ export function InterpolationTimeline() {
         </div>
         <div className="flex items-center gap-4 text-xs text-zinc-600">
           <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 bg-purple-300 rounded-sm" />
+            <div className="w-3 h-3 bg-amber-200 rounded-sm" />
             <span>Keyframe</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 bg-purple-100 rounded-sm border border-purple-200" />
+            <div className="w-3 h-3 bg-blue-100 rounded-sm border border-blue-200" />
             <span>Interpolated</span>
           </div>
         </div>
@@ -40,19 +40,19 @@ export function InterpolationTimeline() {
                     <div
                       className={`w-12 h-12 rounded-lg border-2 flex items-center justify-center transition-all ${
                         isKeyframe
-                          ? 'bg-purple-300 border-purple-300 hover:bg-purple-400'
-                          : 'bg-purple-50 border-purple-200 hover:border-purple-300'
+                          ? 'bg-amber-200 border-amber-200 hover:bg-amber-300'
+                          : 'bg-blue-50 border-blue-200 hover:border-purple-200'
                       }`}
                     >
                       {isKeyframe ? (
-                        <Key className="h-5 w-5 text-purple-800" />
+                        <Key className="h-5 w-5 text-amber-700" />
                       ) : (
-                        <Circle className="h-3 w-3 text-purple-300" />
+                        <Circle className="h-3 w-3 text-blue-300" />
                       )}
                     </div>
                     
                     {/* Frame Number */}
-                    <span className={`text-xs ${isKeyframe ? 'text-purple-700' : 'text-zinc-400'}`}>
+                    <span className={`text-xs ${isKeyframe ? 'text-amber-600' : 'text-zinc-400'}`}>
                       {index + 1}
                     </span>
                   </div>
@@ -63,8 +63,8 @@ export function InterpolationTimeline() {
         </div>
         
         {/* Playhead indicator */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-0.5 h-20 bg-purple-400 pointer-events-none">
-          <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-purple-400 rounded-full shadow-lg" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-0.5 h-20 bg-purple-300 pointer-events-none">
+          <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-purple-300 rounded-full shadow-lg" />
         </div>
       </div>
       

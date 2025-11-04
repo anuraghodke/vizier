@@ -31,19 +31,19 @@
   :root, :host {
     --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    --color-amber-200: oklch(.924 .12 95.746);
+    --color-amber-300: oklch(.879 .169 91.605);
+    --color-amber-600: oklch(.666 .179 58.318);
+    --color-amber-700: oklch(.555 .163 48.998);
+    --color-blue-50: oklch(.97 .014 254.604);
     --color-blue-100: oklch(.932 .032 255.585);
     --color-blue-200: oklch(.882 .059 254.128);
     --color-blue-300: oklch(.809 .105 251.813);
     --color-blue-500: oklch(.623 .214 259.815);
-    --color-purple-50: oklch(.977 .014 308.299);
-    --color-purple-100: oklch(.946 .033 307.174);
+    --color-blue-700: oklch(.488 .243 264.376);
     --color-purple-200: oklch(.902 .063 306.703);
     --color-purple-300: oklch(.827 .119 306.383);
-    --color-purple-400: oklch(.714 .203 305.504);
-    --color-purple-500: oklch(.627 .265 303.9);
-    --color-purple-700: oklch(.496 .265 301.924);
     --color-purple-800: oklch(.438 .218 303.724);
-    --color-purple-900: oklch(.381 .176 304.987);
     --color-zinc-50: oklch(.985 0 0);
     --color-zinc-100: oklch(.967 .001 286.375);
     --color-zinc-200: oklch(.92 .004 286.32);
@@ -661,28 +661,36 @@
     border-style: dashed;
   }
 
+  .border-amber-200 {
+    border-color: var(--color-amber-200);
+  }
+
   .border-blue-200 {
     border-color: var(--color-blue-200);
-  }
-
-  .border-purple-200 {
-    border-color: var(--color-purple-200);
-  }
-
-  .border-purple-300 {
-    border-color: var(--color-purple-300);
   }
 
   .border-zinc-200 {
     border-color: var(--color-zinc-200);
   }
 
+  .bg-amber-200 {
+    background-color: var(--color-amber-200);
+  }
+
   .bg-background {
     background-color: var(--background);
   }
 
+  .bg-blue-50 {
+    background-color: var(--color-blue-50);
+  }
+
   .bg-blue-100 {
     background-color: var(--color-blue-100);
+  }
+
+  .bg-blue-200 {
+    background-color: var(--color-blue-200);
   }
 
   .bg-card {
@@ -697,24 +705,12 @@
     background-color: var(--primary);
   }
 
-  .bg-purple-50 {
-    background-color: var(--color-purple-50);
-  }
-
-  .bg-purple-100 {
-    background-color: var(--color-purple-100);
-  }
-
   .bg-purple-200 {
     background-color: var(--color-purple-200);
   }
 
   .bg-purple-300 {
     background-color: var(--color-purple-300);
-  }
-
-  .bg-purple-400 {
-    background-color: var(--color-purple-400);
   }
 
   .bg-secondary {
@@ -789,8 +785,24 @@
     white-space: nowrap;
   }
 
+  .text-amber-600 {
+    color: var(--color-amber-600);
+  }
+
+  .text-amber-700 {
+    color: var(--color-amber-700);
+  }
+
+  .text-blue-300 {
+    color: var(--color-blue-300);
+  }
+
   .text-blue-500 {
     color: var(--color-blue-500);
+  }
+
+  .text-blue-700 {
+    color: var(--color-blue-700);
   }
 
   .text-card-foreground {
@@ -813,24 +825,8 @@
     color: var(--primary-foreground);
   }
 
-  .text-purple-300 {
-    color: var(--color-purple-300);
-  }
-
-  .text-purple-500 {
-    color: var(--color-purple-500);
-  }
-
-  .text-purple-700 {
-    color: var(--color-purple-700);
-  }
-
   .text-purple-800 {
     color: var(--color-purple-800);
-  }
-
-  .text-purple-900 {
-    color: var(--color-purple-900);
   }
 
   .text-secondary-foreground {
@@ -889,20 +885,20 @@
   }
 
   @media (hover: hover) {
-    .hover\:border-blue-300:hover {
-      border-color: var(--color-blue-300);
-    }
-  }
-
-  @media (hover: hover) {
-    .hover\:border-purple-300:hover {
-      border-color: var(--color-purple-300);
+    .hover\:border-purple-200:hover {
+      border-color: var(--color-purple-200);
     }
   }
 
   @media (hover: hover) {
     .hover\:bg-accent:hover {
       background-color: var(--accent);
+    }
+  }
+
+  @media (hover: hover) {
+    .hover\:bg-amber-300:hover {
+      background-color: var(--color-amber-300);
     }
   }
 
@@ -931,8 +927,8 @@
   }
 
   @media (hover: hover) {
-    .hover\:bg-purple-400:hover {
-      background-color: var(--color-purple-400);
+    .hover\:bg-purple-300:hover {
+      background-color: var(--color-purple-300);
     }
   }
 
