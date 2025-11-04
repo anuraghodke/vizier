@@ -57,34 +57,6 @@ Vizier supports **classic cel animation techniques** with physics-based interpol
 - Full end-to-end pipeline execution working
 - See [docs/PHASE_1_TELEKINESIS_SUMMARY.md](./PHASE_1_TELEKINESIS_SUMMARY.md)
 
-### Recent Changes (Latest First)
-
-**2025-11-01** - LangSmith Tracing Enabled (commit 603f974)
-- Added `@traceable` decorator to `run_telekinesis_pipeline()` in `graph.py`
-- Configured metadata tagging (job_id, instruction, keyframes)
-- Added environment variables to `.env.example`
-- Added `langsmith>=0.1.0` dependency to `pyproject.toml`
-- Enables comprehensive observability of agent loop execution
-
-**2025-11-01** - FILM References Cleanup (commits 2973095, ba68705, f8a0250)
-- Removed all FILM references from documentation
-- Removed FILM references from test files
-- Fixed imports after cleanup
-- FILM approach fully archived in `docs/film/` directory
-
-**2025-10-30** - Prompt Caching Implementation
-- Added prompt caching to all Claude API calls
-- Implemented `cache_control: {"type": "ephemeral"}` on system prompts
-- Added strict validation that caching is working
-- ~90% cost reduction for repeated calls
-- Updated `claude_service.py` and `claude_vision_service.py`
-
-**2025-10-30** - Phase 1 Telekinesis Complete
-- Implemented full end-to-end pipeline execution
-- Created object-based motion interpolation
-- Built FrameGeneratorService with transparency support
-- All Phase 1 tests passing
-
 ### Current Status: Multi-Agent System Development
 
 **NEW APPROACH**: Principle-Aware Animation System

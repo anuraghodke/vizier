@@ -1,119 +1,267 @@
 # Multi-Frame Interpolation Script
 
-This script allows you to upload multiple keyframe images and generate interpolated frames between each consecutive pair.
+Generate interpolated frames between multiple keyframe images using AI-powered motion analysis.
 
-## Usage
+## Quick Start
 
-### Basic Setup
+### CLI Usage (Recommended)
 
-1. Edit the configuration variables at the bottom of `multi_frame_interpolation.py`:
+```bash
+# Basic usage with auto-generated output directory
+python scripts/multi_frame_interpolation.py tests/test_images/bouncing_ball
+
+# Specify number of frames between each pair
+python scripts/multi_frame_interpolation.py tests/test_images/bouncing_ball --frames-between 5
+
+# Custom output directory
+python scripts/multi_frame_interpolation.py tests/test_images/bouncing_ball --output-dir outputs/my_animation
+
+# Custom frame counts for each pair (4 keyframes = 3 pairs)
+python scripts/multi_frame_interpolation.py tests/test_images/bouncing_ball -c 1 -c 5 -c 2
+
+# With easing curve
+python scripts/multi_frame_interpolation.py tests/test_images/bouncing_ball -n 3 -t ease-in-out
+
+# Get help
+python scripts/multi_frame_interpolation.py --help
+```
+
+### Configuration File Usage (Alternative)
+
+If you prefer not to use CLI arguments, you can edit the configuration variables at the bottom of the script and run without arguments:
+
+1. Edit `scripts/multi_frame_interpolation.py`:
 
 ```python
-# Specify your keyframe image paths
-KEYFRAME_PATHS = [
-    "path/to/keyframe1.png",
-    "path/to/keyframe2.png",
-    "path/to/keyframe3.png",
-    "path/to/keyframe4.png",
-]
-
-# Specify frames between each consecutive pair
-# Length must be len(KEYFRAME_PATHS) - 1
-FRAME_COUNTS = [
-    1,  # 1 frame between keyframe 1 and 2
-    2,  # 2 frames between keyframe 2 and 3
-    0,  # 0 frames between keyframe 3 and 4
-]
-
-# Output directory
-OUTPUT_DIR = "outputs/my_sequence"
-
-# Timing curve: "linear", "ease-in-out", "ease-in", "ease-out"
+KEYFRAME_FOLDER = "tests/test_images/bouncing_ball"
+FRAMES_BETWEEN = 1
+FRAME_COUNTS = None  # or [1, 5, 2] for custom counts
+OUTPUT_DIR = None    # Auto-generate or specify path
 TIMING_CURVE = "linear"
 ```
 
-2. Run the script:
+2. Run:
 
 ```bash
 python scripts/multi_frame_interpolation.py
 ```
 
-## Example
+## CLI Arguments
 
-Given 4 keyframes and `FRAME_COUNTS = [1, 2, 0]`:
+### Positional Arguments
 
+- `keyframe_folder` (required): Folder containing keyframe images
+  - Images should have trailing numbers (e.g., `frame-1.png`, `frame-2.png`, `ball_001.png`)
+  - Supported formats: PNG, JPG, JPEG, WEBP
+
+### Options
+
+- `--output-dir`, `-o`: Output directory for generated frames
+  - Default: Auto-generated as `outputs/{folder_name}_001`, `outputs/{folder_name}_002`, etc.
+  - Example: `-o outputs/my_animation`
+
+- `--frames-between`, `-n`: Number of frames between each keyframe pair (uniform)
+  - Default: 1
+  - Example: `-n 5` generates 5 frames between each pair
+
+- `--frame-counts`, `-c`: Custom frame counts for each pair (overrides `--frames-between`)
+  - Specify once per pair (for N keyframes, need N-1 values)
+  - Example: For 4 keyframes: `-c 1 -c 5 -c 2`
+
+- `--timing-curve`, `-t`: Easing function for interpolation
+  - Options: `linear`, `ease-in-out`, `ease-in`, `ease-out`
+  - Default: `linear`
+
+## Examples
+
+### Example 1: Bouncing Ball with 5 Frames Between Each
+
+```bash
+python scripts/multi_frame_interpolation.py tests/test_images/bouncing_ball -n 5
 ```
-Input:
-  keyframe1.png
-  keyframe2.png
-  keyframe3.png
-  keyframe4.png
 
-FRAME_COUNTS = [1, 2, 0]
+**Output**: `outputs/bouncing_ball_001/frame_000.png` ... `frame_030.png` (for 7 keyframes)
 
-Output sequence:
-  frame_000.png  <- keyframe1.png
-  frame_001.png  <- interpolated between 1 and 2
-  frame_002.png  <- keyframe2.png
-  frame_003.png  <- interpolated 1/2 between 2 and 3
-  frame_004.png  <- interpolated 2/2 between 2 and 3
-  frame_005.png  <- keyframe3.png
-  frame_006.png  <- keyframe4.png (no interpolation)
+### Example 2: Custom Frame Counts
+
+Given 4 keyframes in `tests/test_images/walk_cycle`:
+
+```bash
+python scripts/multi_frame_interpolation.py tests/test_images/walk_cycle -c 1 -c 5 -c 2
 ```
 
-## Image Requirements
+**Result**:
+- 1 frame between keyframes 1 and 2
+- 5 frames between keyframes 2 and 3
+- 2 frames between keyframes 3 and 4
 
-- **Format**: PNG (preferred), JPG, WEBP, or GIF
-- **Transparency**: PNG with alpha channel works best
-- **Size**: No strict limits, but consistent dimensions recommended
-- **Content**: Works best with clear objects on transparent or solid backgrounds
+**Total frames**: 4 (keyframes) + 1 + 5 + 2 = 12 frames
 
-## Parameters
+### Example 3: Ease-In-Out Timing
 
-### KEYFRAME_PATHS
-- List of paths to your keyframe images
-- Can be absolute or relative to project root
-- Minimum: 2 keyframes
-- Maximum: No hard limit (keep under ~20 for performance)
+```bash
+python scripts/multi_frame_interpolation.py tests/test_images/bouncing_ball -n 3 -t ease-in-out
+```
 
-### FRAME_COUNTS
-- List of integers specifying how many frames to generate between each pair
-- Length must equal `len(KEYFRAME_PATHS) - 1`
-- Each value can be 0 or greater
-- Example: `[5, 10, 3]` for 4 keyframes
+Frames will move slowly at start/end, faster in the middle.
 
-### OUTPUT_DIR
-- Directory where generated frames will be saved
-- Created automatically if it doesn't exist
-- Default: `outputs/my_interpolation_sequence`
+### Example 4: Custom Output Directory
 
-### TIMING_CURVE
-- Easing function for interpolation
-- Options:
-  - `"linear"`: Constant speed
-  - `"ease-in-out"`: Slow start and end, fast middle
-  - `"ease-in"`: Slow start, fast end
-  - `"ease-out"`: Fast start, slow end
+```bash
+python scripts/multi_frame_interpolation.py tests/test_images/bouncing_ball -n 5 -o outputs/bouncing_animation_v2
+```
+
+Saves frames to `outputs/bouncing_animation_v2/` instead of auto-generated path.
+
+## Folder Structure Requirements
+
+### Input Folder
+
+Keyframe images must have **trailing numbers** in their filenames. The script automatically sorts files by these numbers.
+
+**Supported formats**: `.png`, `.jpg`, `.jpeg`, `.webp`
+
+**Examples**:
+```
+Good:
+  frame-1.png
+  frame-2.png
+  frame-3.png
+  frame-4.png
+
+Also Good:
+  ball_001.png
+  ball_002.png
+  ball_003.png
+
+Also Good:
+  bouncing-ball-1.png
+  bouncing-ball-2.png
+  bouncing-ball-10.png  <- Sorted correctly as 10, not between 1 and 2
+
+Bad (no trailing numbers):
+  frame_a.png
+  frame_b.png
+```
+
+### Output Directory
+
+**Auto-generated (default)**:
+- First run: `outputs/bouncing_ball_001/`
+- Second run: `outputs/bouncing_ball_002/`
+- Third run: `outputs/bouncing_ball_003/`
+- Pattern: `outputs/{folder_name}_{number}/`
+
+**Custom (specified with `-o`)**:
+- Example: `outputs/my_custom_animation/`
 
 ## Output
 
 The script generates:
 1. Sequential PNG frames named `frame_000.png`, `frame_001.png`, etc.
-2. Console output showing progress and frame mapping
-3. All frames saved in the specified `OUTPUT_DIR`
+2. Console output showing:
+   - Discovered keyframes in order
+   - Frame generation progress
+   - Final frame mapping
+3. All frames saved in the output directory
+
+## Image Requirements
+
+- **Format**: PNG (preferred), JPG, JPEG, WEBP
+- **Transparency**: PNG with alpha channel works best
+- **Size**: No strict limits, but consistent dimensions recommended
+- **Content**: Works best with clear objects on transparent or solid backgrounds
+
+## Timing Curves
+
+Different easing functions create different motion feels:
+
+- **linear**: Constant speed throughout (robotic)
+- **ease-in-out**: Slow start, fast middle, slow end (natural)
+- **ease-in**: Slow start, fast end (accelerating)
+- **ease-out**: Fast start, slow end (decelerating)
 
 ## Troubleshooting
 
-### "frame_counts length must be keyframe_paths length - 1"
-- Make sure `FRAME_COUNTS` has exactly one fewer element than `KEYFRAME_PATHS`
-- For 4 keyframes, you need 3 frame counts
-
-### "Keyframe not found"
-- Check that all paths in `KEYFRAME_PATHS` are correct
+### "Folder not found"
+- Check that the keyframe folder path is correct
 - Use absolute paths or paths relative to project root
-- Verify files exist with `ls path/to/keyframe.png`
+- Example: `python scripts/multi_frame_interpolation.py /full/path/to/keyframes`
+
+### "No image files found in folder"
+- Ensure folder contains PNG, JPG, JPEG, or WEBP files
+- Check file extensions are lowercase (`.png` not `.PNG`)
+- Verify files exist: `ls tests/test_images/bouncing_ball`
+
+### "No trailing number found in filename"
+- Files must have numbers at the end of their name (before extension)
+- Good: `frame1.png`, `ball-05.png`, `key_003.png`
+- Bad: `frame_a.png`, `1_ball.png` (number at start)
+
+### "frame_counts length must be keyframe_paths length - 1"
+- For N keyframes, you need exactly N-1 frame count values
+- Example: 4 keyframes need 3 counts: `-c 1 -c 5 -c 2`
+- Check how many keyframes were detected in console output
 
 ### "Could not detect moving objects in keyframes"
-- The current implementation uses object detection for interpolation
 - Works best with objects on transparent backgrounds
 - Try using PNG images with clear alpha channels
+- Ensure objects have different positions/colors between keyframes
+- Current implementation uses object-based interpolation (Phase 1)
+
+## Technical Details
+
+### Current Implementation (Phase 1)
+
+The script uses **object-based motion interpolation**:
+- Detects objects using color segmentation
+- Interpolates object position and color
+- Applies easing curves to timing
+
+**Limitations**:
+- No deformation/squash-stretch (coming in Phase 5)
+- Works best with simple objects
+- May not handle complex backgrounds well
+
+### Future Enhancements
+
+- AnimateDiff integration for motion-aware generation
+- ControlNet for structural guidance
+- Deformation and squash-stretch support
+- Advanced principle detection
+
+## Advanced Usage
+
+### Using Both Config and CLI
+
+CLI arguments override configuration file variables:
+
+```python
+# In script
+KEYFRAME_FOLDER = "tests/test_images/bouncing_ball"
+FRAMES_BETWEEN = 1
+```
+
+```bash
+# Override FRAMES_BETWEEN via CLI
+python scripts/multi_frame_interpolation.py tests/test_images/walk_cycle -n 5
+```
+
+Result: Uses `walk_cycle` folder with 5 frames between each pair.
+
+### Zero Interpolation (Direct Cuts)
+
+Use `0` in frame counts for no interpolation between certain pairs:
+
+```bash
+# 4 keyframes: interpolate between 1-2 and 3-4, but cut directly from 2-3
+python scripts/multi_frame_interpolation.py tests/test_images/keyframes -c 5 -c 0 -c 5
+```
+
+## Support
+
+For issues or questions:
+1. Check troubleshooting section above
+2. Review console output for specific error messages
+3. Verify keyframe folder structure and file naming
+4. See project documentation in `docs/` directory
