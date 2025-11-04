@@ -235,8 +235,15 @@ def generate_multi_frame_sequence(
                 logger.info(f"  Generated {len(segment_frames)} frames for this segment")
 
                 # Copy frames to main output directory with sequential numbering
+                # Skip the last frame (second keyframe) unless this is the last pair
+                # The second keyframe will be the first frame of the next pair
                 from PIL import Image
-                for seg_frame_path in segment_frames:
+                is_last_pair = (pair_idx == len(keyframe_paths) - 2)
+                frames_to_copy = segment_frames if is_last_pair else segment_frames[:-1]
+
+                logger.info(f"  Copying {len(frames_to_copy)} frames to output (excluding duplicate keyframe)" if not is_last_pair else f"  Copying all {len(frames_to_copy)} frames to output (last pair)")
+
+                for seg_frame_path in frames_to_copy:
                     img = Image.open(seg_frame_path)
                     frame_path = str(output_path / f"frame_{frame_counter:03d}.png")
                     img.save(frame_path)
@@ -247,15 +254,9 @@ def generate_multi_frame_sequence(
                 logger.error(f"Failed to generate frames for pair {pair_idx + 1}: {e}")
                 raise
 
-    # Add the final keyframe (if not already added)
-    # Check if we need to add the last keyframe
-    # This happens when the last segment had num_intermediate > 0
-    # (the last keyframe is already included in segment_frames)
-    # OR when the last segment had num_intermediate == 0
-    # (we need to add it manually)
-
+    # Add the final keyframe if the last segment had 0 intermediate frames
+    # (For segments with num_intermediate > 0, the final keyframe was already added above)
     if frame_counts[-1] == 0:
-        # Last segment had 0 intermediate frames, add final keyframe
         from PIL import Image
         img = Image.open(keyframe_paths[-1])
         frame_path = str(output_path / f"frame_{frame_counter:03d}.png")
