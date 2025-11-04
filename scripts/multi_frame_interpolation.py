@@ -40,6 +40,52 @@ logger = logging.getLogger(__name__)
 app = typer.Typer(help="Multi-frame interpolation tool for generating frames between keyframe images.")
 
 
+def generate_output_directory(keyframe_folder: str, base_output_dir: str = "outputs") -> str:
+    """
+    Generate an auto-incrementing output directory name.
+
+    Args:
+        keyframe_folder: Path to the keyframe folder
+        base_output_dir: Base directory for outputs (default: "outputs")
+
+    Returns:
+        Path like "outputs/bouncing_ball_001", "outputs/bouncing_ball_002", etc.
+
+    Example:
+        keyframe_folder = "tests/test_images/bouncing_ball"
+        -> returns "outputs/bouncing_ball_001" (or next available number)
+    """
+    # Extract folder name from path
+    folder_name = Path(keyframe_folder).name
+
+    # Find existing numbered outputs for this folder
+    base_path = Path(base_output_dir)
+    base_path.mkdir(exist_ok=True, parents=True)
+
+    # Find all directories matching the pattern: {folder_name}_###
+    pattern = f"{folder_name}_*"
+    existing = [d for d in base_path.glob(pattern) if d.is_dir()]
+
+    # Extract numbers from existing directories
+    numbers = []
+    for d in existing:
+        # Extract the number suffix (e.g., "bouncing_ball_003" -> 3)
+        suffix = d.name[len(folder_name) + 1:]  # +1 for underscore
+        if suffix.isdigit():
+            numbers.append(int(suffix))
+
+    # Find next available number
+    next_num = 1 if not numbers else max(numbers) + 1
+
+    # Format with zero padding (3 digits)
+    output_name = f"{folder_name}_{next_num:03d}"
+    output_path = base_path / output_name
+
+    logger.info(f"Auto-generated output directory: {output_path}")
+
+    return str(output_path)
+
+
 def load_keyframes_from_folder(folder_path: str) -> List[str]:
     """
     Load and sort keyframe images from a folder.
@@ -297,13 +343,15 @@ FRAMES_BETWEEN = 1
 #   - 1 frame between keyframes 1 and 2
 #   - 5 frames between keyframes 2 and 3
 #   - 2 frames between keyframes 3 and 4
-FRAME_COUNTS = None 
+FRAME_COUNTS = None
 
 # Output directory for generated sequence
-OUTPUT_DIR = "outputs/bouncing_ball_002"
+# Set to None to auto-generate based on input folder name (e.g., "outputs/bouncing_ball_001")
+# Or specify a custom path like "outputs/my_custom_output"
+OUTPUT_DIR = None
 
 # Timing curve: "linear", "ease-in-out", "ease-in", "ease-out"
-TIMING_CURVE = "linear"
+TIMING_CURVE = "ease-in-out"
 
 # ============================================================================
 
@@ -314,10 +362,10 @@ def main(
         ...,
         help="Folder containing keyframe images (enumerated with trailing numbers, e.g., frame-1.png, frame-2.png)"
     ),
-    output_dir: str = typer.Option(
-        "outputs/interpolation_output",
+    output_dir: Optional[str] = typer.Option(
+        None,
         "--output-dir", "-o",
-        help="Output directory for generated frames"
+        help="Output directory for generated frames (default: auto-generated based on input folder)"
     ),
     frames_between: Optional[int] = typer.Option(
         None,
@@ -357,6 +405,12 @@ def main(
         # Load keyframes from folder
         logger.info("Loading keyframes from folder...")
         keyframe_paths = load_keyframes_from_folder(folder_path)
+
+        # Determine output directory (auto-generate if not specified)
+        if output_dir is None:
+            output_dir = generate_output_directory(folder_path)
+        else:
+            logger.info(f"Using specified output directory: {output_dir}")
 
         # Determine frame counts
         if frame_counts is not None:
@@ -409,6 +463,13 @@ if __name__ == "__main__":
             logger.info("\nLoading keyframes from folder...")
             keyframe_paths = load_keyframes_from_folder(folder_path)
 
+            # Determine output directory (auto-generate if not specified)
+            output_dir = OUTPUT_DIR
+            if output_dir is None:
+                output_dir = generate_output_directory(folder_path)
+            else:
+                logger.info(f"Using specified output directory: {output_dir}")
+
             # Determine frame counts
             if FRAME_COUNTS is not None:
                 frame_counts = FRAME_COUNTS
@@ -421,7 +482,7 @@ if __name__ == "__main__":
             generated_frames = generate_multi_frame_sequence(
                 keyframe_paths=keyframe_paths,
                 frame_counts=frame_counts,
-                output_dir=OUTPUT_DIR,
+                output_dir=output_dir,
                 timing_curve=TIMING_CURVE
             )
 
