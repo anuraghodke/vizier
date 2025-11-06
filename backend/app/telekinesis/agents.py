@@ -22,6 +22,7 @@ from .console import (
 )
 from backend.app.services.claude_vision_service import get_vision_service
 from backend.app.services.frame_generator_service import get_generator_service
+from backend.app.services.claude_principles_service import get_principles_service
 
 logger = logging.getLogger(__name__)
 
@@ -109,50 +110,88 @@ def analyzer_agent(state: AnimationState) -> AnimationState:
 
 def principles_agent(state: AnimationState) -> AnimationState:
     """
-    PRINCIPLES AGENT - Phase 0 Stub
+    PRINCIPLES AGENT - Phase 2 Implementation
 
     Purpose: Determine which of the 12 animation principles apply.
 
-    Phase 0: Returns hardcoded principles.
-    Future phases will add:
-    - Claude reasoning about applicable principles
-    - Confidence scoring
-    - Parameter extraction from analysis
+    Phase 2: Uses Claude to analyze motion and detect applicable principles
+    with confidence scores and parameters.
     """
     iteration = state.get("iteration_count", 0)
     print_agent_start("principles", iteration)
-    print_phase_badge(0)
+    print_phase_badge(2)
 
     analysis = state.get("analysis", {})
-    logger.info("Identifying applicable animation principles...")
+    instruction = state.get("instruction", "")
 
-    # Placeholder: Always suggest arc and slow_in_slow_out
-    animation_principles = {
-        "applicable_principles": [
-            {
+    logger.info("Identifying applicable animation principles with Claude...")
+
+    try:
+        # Use Claude to detect principles based on analysis
+        principles_service = get_principles_service()
+        animation_principles = principles_service.detect_principles(
+            analysis=analysis,
+            instruction=instruction
+        )
+
+        # Mark as Phase 2 implementation
+        animation_principles["_phase"] = 2
+        animation_principles["_status"] = "claude_detected"
+
+        num_principles = len(animation_principles.get("applicable_principles", []))
+        dominant = animation_principles.get("dominant_principle", "unknown")
+
+        logger.info(
+            f"PRINCIPLES: Detected {num_principles} principles, "
+            f"dominant={dominant}"
+        )
+
+    except Exception as e:
+        # Fallback to sensible defaults if detection fails
+        logger.error(f"PRINCIPLES detection failed: {e}")
+        logger.warning("PRINCIPLES falling back to default principles")
+
+        # Use intelligent defaults based on motion_type from analysis
+        motion_type = analysis.get("motion_type", "translation")
+        motion_energy = analysis.get("motion_energy", "medium")
+
+        # Build sensible defaults
+        default_principles = []
+
+        # Arc: Apply for most organic motion
+        if motion_type in ["rotation", "translation"]:
+            default_principles.append({
                 "principle": "arc",
-                "confidence": 0.8,
-                "reason": "Phase 0 stub - default principle",
-                "parameters": {"arc_type": "circular"}
-            },
-            {
+                "confidence": 0.7,
+                "reason": "Fallback - organic motion typically follows arcs",
+                "parameters": {"arc_type": "natural", "arc_intensity": 0.5}
+            })
+
+        # Slow in/out: Apply for non-explosive motion
+        if motion_energy in ["slow", "medium"]:
+            default_principles.append({
                 "principle": "slow_in_slow_out",
                 "confidence": 0.8,
-                "reason": "Phase 0 stub - default principle",
-                "parameters": {"ease_type": "ease-in-out"}
-            },
-            {
-                "principle": "timing",
-                "confidence": 1.0,
-                "reason": "Always applicable",
-                "parameters": {"speed_category": "normal"}
-            }
-        ],
-        "dominant_principle": "arc",
-        "complexity_score": 0.5,
-        "_phase": 0,
-        "_status": "stub"
-    }
+                "reason": "Fallback - natural easing for smooth motion",
+                "parameters": {"ease_type": "ease-in-out", "ease_in": 0.3, "ease_out": 0.5}
+            })
+
+        # Timing: Always applies
+        default_principles.append({
+            "principle": "timing",
+            "confidence": 1.0,
+            "reason": "Fallback - always applicable",
+            "parameters": {"speed_category": motion_energy}
+        })
+
+        animation_principles = {
+            "applicable_principles": default_principles,
+            "dominant_principle": "timing",
+            "complexity_score": 0.5,
+            "_phase": 2,
+            "_status": "fallback",
+            "_error": str(e)
+        }
 
     state["animation_principles"] = animation_principles
 
@@ -162,66 +201,104 @@ def principles_agent(state: AnimationState) -> AnimationState:
         "agent": "principles",
         "timestamp": datetime.now().isoformat(),
         "action": "identified_principles",
-        "details": "Phase 0 stub - hardcoded principles returned"
+        "details": f"Phase 2 - Detected {len(animation_principles.get('applicable_principles', []))} principles"
     })
     state["messages"] = messages
 
     print_principles_summary(animation_principles)
-    print_agent_complete("principles", "3 principles identified")
+    num_principles = len(animation_principles.get("applicable_principles", []))
+    print_agent_complete("principles", f"{num_principles} principles identified")
     return state
 
 
 def planner_agent(state: AnimationState) -> AnimationState:
     """
-    PLANNER AGENT - Phase 0 Stub
+    PLANNER AGENT - Phase 2 Implementation
 
     Purpose: Create detailed frame-by-frame generation plan.
 
-    Phase 0: Returns simple linear interpolation plan.
-    Future phases will add:
-    - Arc path calculation
-    - Timing curve generation
-    - Deformation schedules
-    - Motion layer planning
+    Phase 2: Incorporates detected principles into planning
+    - Uses timing curves from slow_in_slow_out principle
+    - Considers arc motion parameters
+    - Adjusts frame distribution based on motion energy
     """
     iteration = state.get("iteration_count", 0)
     print_agent_start("planner", iteration)
-    print_phase_badge(0)
+    print_phase_badge(2)
 
     analysis = state.get("analysis", {})
     animation_principles = state.get("animation_principles", {})
     instruction = state.get("instruction", "")
 
-    logger.info("Creating frame-by-frame generation plan...")
+    logger.info("Creating frame-by-frame generation plan with principle integration...")
 
-    # Placeholder: Simple 8-frame linear plan
-    num_frames = 8
+    # Extract principles for planning
+    principles_list = animation_principles.get("applicable_principles", [])
+    principles_map = {p["principle"]: p for p in principles_list}
+
+    # Determine number of frames based on motion energy and instruction
+    motion_energy = analysis.get("motion_energy", "medium")
+    num_frames = _determine_frame_count(motion_energy, instruction)
+
+    # Determine timing curve from principles
+    timing_curve = "linear"
+    if "slow_in_slow_out" in principles_map:
+        timing_params = principles_map["slow_in_slow_out"].get("parameters", {})
+        timing_curve = timing_params.get("ease_type", "ease-in-out")
+        logger.info(f"PLANNER: Using timing curve '{timing_curve}' from slow_in_slow_out principle")
+    elif "timing" in principles_map:
+        timing_params = principles_map["timing"].get("parameters", {})
+        speed = timing_params.get("speed_category", "normal")
+        # Map speed to timing curve
+        if speed in ["slow", "very-slow"]:
+            timing_curve = "ease-in-out"
+        elif speed in ["fast", "very-fast"]:
+            timing_curve = "linear"
+
+    # Determine arc type from principles
+    arc_type = "none"
+    arc_intensity = 0.0
+    if "arc" in principles_map:
+        arc_params = principles_map["arc"].get("parameters", {})
+        arc_type = arc_params.get("arc_type", "natural")
+        arc_intensity = arc_params.get("arc_intensity", 0.5)
+        logger.info(f"PLANNER: Planning arc motion type='{arc_type}', intensity={arc_intensity}")
+
+    # Build frame schedule with easing
     frame_schedule = []
-
     for i in range(num_frames):
-        t = i / (num_frames - 1) if num_frames > 1 else 0.0
+        # Linear interpolation parameter
+        t_linear = i / (num_frames - 1) if num_frames > 1 else 0.0
+
+        # Apply easing curve
+        t_eased = _apply_easing_curve(t_linear, timing_curve)
+
         frame_schedule.append({
             "frame_index": i,
-            "t": t,
-            "arc_position": {"x": 0, "y": 0},
+            "t": t_eased,  # Use eased time for interpolation
+            "t_linear": t_linear,  # Keep linear for reference
+            "arc_position": {"x": 0, "y": 0},  # Will be calculated by generator
             "squash_stretch": {"x_scale": 1.0, "y_scale": 1.0},
             "parts_positions": {}
         })
 
+    # Build complete plan
     plan = {
         "num_frames": num_frames,
         "frame_schedule": frame_schedule,
-        "timing_curve": "linear",
+        "timing_curve": timing_curve,
         "custom_easing": [],
-        "arc_type": "none",
-        "controlnet_strategy": "none",
+        "arc_type": arc_type,
+        "arc_intensity": arc_intensity,
+        "controlnet_strategy": "none",  # Phase 3
         "controlnet_strength": 0.0,
-        "deformation_schedule": {},
-        "layered_motion": False,
+        "deformation_schedule": {},  # Phase 5
+        "layered_motion": False,  # Phase 5
         "motion_layers": [],
         "volume_constraints": {},
-        "_phase": 0,
-        "_status": "stub"
+        "principles_applied": [p["principle"] for p in principles_list],
+        "_phase": 2,
+        "_status": "principle_aware"
     }
 
     state["plan"] = plan
@@ -232,13 +309,80 @@ def planner_agent(state: AnimationState) -> AnimationState:
         "agent": "planner",
         "timestamp": datetime.now().isoformat(),
         "action": "created_plan",
-        "details": f"Phase 0 stub - simple {num_frames}-frame linear plan"
+        "details": f"Phase 2 - {num_frames}-frame plan with {timing_curve} timing"
     })
     state["messages"] = messages
 
     print_plan_summary(plan)
-    print_agent_complete("planner", f"{num_frames}-frame plan created")
+    print_agent_complete("planner", f"{num_frames}-frame principle-aware plan created")
     return state
+
+
+def _determine_frame_count(motion_energy: str, instruction: str) -> int:
+    """
+    Determine appropriate number of frames based on motion energy and instruction.
+
+    Args:
+        motion_energy: slow, medium, fast, explosive
+        instruction: User instruction (may contain explicit frame count)
+
+    Returns:
+        Number of frames to generate
+    """
+    # Check if instruction contains explicit frame count
+    import re
+    frame_match = re.search(r'(\d+)\s*frames?', instruction.lower())
+    if frame_match:
+        count = int(frame_match.group(1))
+        # Clamp to reasonable range
+        return max(4, min(32, count))
+
+    # Otherwise, base on motion energy
+    energy_to_frames = {
+        "very-slow": 16,
+        "slow": 12,
+        "medium": 8,
+        "fast": 6,
+        "very-fast": 4,
+        "explosive": 4
+    }
+
+    return energy_to_frames.get(motion_energy, 8)
+
+
+def _apply_easing_curve(t: float, curve_type: str) -> float:
+    """
+    Apply easing curve to linear interpolation parameter.
+
+    Args:
+        t: Linear interpolation parameter (0.0 to 1.0)
+        curve_type: Type of easing (linear, ease-in, ease-out, ease-in-out)
+
+    Returns:
+        Eased interpolation parameter (0.0 to 1.0)
+    """
+    if curve_type == "linear":
+        return t
+
+    elif curve_type == "ease-in":
+        # Slow start, fast end (quadratic)
+        return t * t
+
+    elif curve_type == "ease-out":
+        # Fast start, slow end (quadratic)
+        return 1.0 - (1.0 - t) * (1.0 - t)
+
+    elif curve_type == "ease-in-out":
+        # Slow start and end (cubic)
+        if t < 0.5:
+            return 2.0 * t * t
+        else:
+            return 1.0 - 2.0 * (1.0 - t) * (1.0 - t)
+
+    else:
+        # Unknown curve type, default to linear
+        logger.warning(f"Unknown easing curve '{curve_type}', using linear")
+        return t
 
 
 def generator_agent(state: AnimationState) -> AnimationState:
