@@ -60,7 +60,7 @@ export default function App() {
     <div className="h-screen flex flex-col bg-zinc-50">
       <Header />
 
-      <div className="flex-1 flex flex-col overflow-hidden p-6 gap-4">
+      <div className="flex-1 flex flex-col overflow-y-auto p-6 gap-4">
         {/* Upload Section */}
         <UploadSection
           frame1={frame1}
