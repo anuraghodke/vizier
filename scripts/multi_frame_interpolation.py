@@ -330,11 +330,11 @@ def generate_multi_frame_sequence(
 
 # Specify folder containing keyframe images (absolute or relative to project root)
 # Images should be enumerated with trailing numbers (e.g., frame-1.png, frame-2.png)
-KEYFRAME_FOLDER = "tests/test_images/bouncing_ball"
+KEYFRAME_FOLDER = "tests/test_images/head-perspective"
 
 # Specify number of frames to generate between each consecutive pair
 # Option 1: Use a single value (applies to all pairs)
-FRAMES_BETWEEN = 1
+FRAMES_BETWEEN = 2
 
 # Option 2: Use an array to specify different counts for each pair
 # Length must be (number of keyframes) - 1
