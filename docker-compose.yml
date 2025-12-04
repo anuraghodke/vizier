@@ -19,8 +19,8 @@ services:
   # Backend - FastAPI server
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: vizier-backend
     ports:
       - "8000:8000"
@@ -40,8 +40,8 @@ services:
   # Celery Worker - Async task processing
   celery_worker:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: vizier-celery-worker
     volumes:
       - ./backend:/app
@@ -68,7 +68,7 @@ services:
       - ./frontend:/app
       - /app/node_modules  # Prevent overwriting node_modules
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8000/api
+      - VITE_API_URL=http://localhost:8000
     depends_on:
       - backend
     command: npm run dev

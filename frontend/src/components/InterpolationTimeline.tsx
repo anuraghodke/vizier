@@ -1,17 +1,29 @@
 import { Card } from './ui/card';
 import { Key, Circle } from 'lucide-react';
 
-// Mock data: 2 keyframes with 8 intermediate frames
-const totalFrames = 10;
-const keyframeIndices = [0, 9]; // First and last frames are keyframes
+interface InterpolationTimelineProps {
+  frames?: string[];
+  currentFrameIndex?: number;
+  onFrameClick?: (index: number) => void;
+}
 
-export function InterpolationTimeline() {
+export function InterpolationTimeline({
+  frames,
+  currentFrameIndex = 0,
+  onFrameClick
+}: InterpolationTimelineProps) {
+  const hasFrames = frames && frames.length > 0;
+  const totalFrames = hasFrames ? frames.length : 10;
+
+  // Assume first and last frames are keyframes
+  const keyframeIndices = hasFrames ? [0, frames.length - 1] : [0, 9];
+
   return (
     <Card className="bg-white border border-zinc-200 p-6">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <h3 className="text-sm text-zinc-900">Timeline</h3>
-          <span className="text-xs text-zinc-500">10 frames total</span>
+          <h3 className="text-sm font-medium text-zinc-900">Timeline</h3>
+          <span className="text-xs text-zinc-500">{totalFrames} frames total</span>
         </div>
         <div className="flex items-center gap-4 text-xs text-zinc-600">
           <div className="flex items-center gap-1.5">
@@ -24,7 +36,7 @@ export function InterpolationTimeline() {
           </div>
         </div>
       </div>
-      
+
       {/* Timeline Track */}
       <div className="relative">
         {/* Background Track */}
@@ -33,13 +45,20 @@ export function InterpolationTimeline() {
             <div className="flex-1 flex justify-between items-center">
               {Array.from({ length: totalFrames }).map((_, index) => {
                 const isKeyframe = keyframeIndices.includes(index);
-                
+                const isCurrent = index === currentFrameIndex;
+
                 return (
-                  <div key={index} className="flex flex-col items-center gap-2 group cursor-pointer">
+                  <div
+                    key={index}
+                    className="flex flex-col items-center gap-2 group cursor-pointer"
+                    onClick={() => onFrameClick?.(index)}
+                  >
                     {/* Frame Box */}
                     <div
                       className={`w-12 h-12 rounded-lg border-2 flex items-center justify-center transition-all ${
-                        isKeyframe
+                        isCurrent
+                          ? 'bg-purple-200 border-purple-400 ring-2 ring-purple-300'
+                          : isKeyframe
                           ? 'bg-amber-200 border-amber-200 hover:bg-amber-300'
                           : 'bg-blue-50 border-blue-200 hover:border-purple-200'
                       }`}
@@ -47,12 +66,20 @@ export function InterpolationTimeline() {
                       {isKeyframe ? (
                         <Key className="h-5 w-5 text-amber-700" />
                       ) : (
-                        <Circle className="h-3 w-3 text-blue-300" />
+                        <Circle className={`h-3 w-3 ${isCurrent ? 'text-purple-600' : 'text-blue-300'}`} />
                       )}
                     </div>
-                    
+
                     {/* Frame Number */}
-                    <span className={`text-xs ${isKeyframe ? 'text-amber-600' : 'text-zinc-400'}`}>
+                    <span
+                      className={`text-xs font-medium ${
+                        isCurrent
+                          ? 'text-purple-600'
+                          : isKeyframe
+                          ? 'text-amber-600'
+                          : 'text-zinc-400'
+                      }`}
+                    >
                       {index + 1}
                     </span>
                   </div>
@@ -61,17 +88,17 @@ export function InterpolationTimeline() {
             </div>
           </div>
         </div>
-        
-        {/* Playhead indicator */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-0.5 h-20 bg-purple-300 pointer-events-none">
-          <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-purple-300 rounded-full shadow-lg" />
-        </div>
       </div>
-      
+
       {/* Frame Info */}
-      <div className="mt-4 flex items-center justify-center gap-2 text-xs text-zinc-500">
-        <span>Current: Frame 5 (Interpolated)</span>
-      </div>
+      {hasFrames && (
+        <div className="mt-4 flex items-center justify-center gap-2 text-xs text-zinc-500">
+          <span>
+            Current: Frame {currentFrameIndex + 1}
+            {keyframeIndices.includes(currentFrameIndex) ? ' (Keyframe)' : ' (Interpolated)'}
+          </span>
+        </div>
+      )}
     </Card>
   );
 }

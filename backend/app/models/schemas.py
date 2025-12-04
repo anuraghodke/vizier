@@ -150,12 +150,12 @@ class GenerateResponse(BaseModel):
     Response after submitting animation generation request.
     """
     job_id: str = Field(..., description="Job ID for tracking progress")
-    status: str = Field(default="queued", description="Initial job status")
+    status: str = Field(default="pending", description="Initial job status")
 
     class Config:
         json_schema_extra = {
             "example": {
                 "job_id": "550e8400-e29b-41d4-a716-446655440000",
-                "status": "queued"
+                "status": "pending"
             }
         }
