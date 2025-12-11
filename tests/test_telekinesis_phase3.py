@@ -47,9 +47,9 @@ def check_prerequisites():
     console.print("[green]OK[/green] ANTHROPIC_API_KEY found")
 
     # Check test images
-    test_images_dir = project_root / "tests" / "test_images"
-    frame1 = test_images_dir / "frame1.png"
-    frame2 = test_images_dir / "frame2.png"
+    test_images_dir = project_root / "tests" / "head-perspective"
+    frame1 = test_images_dir / "Untitled_Artwork-4 2.png"
+    frame2 = test_images_dir / "Untitled_Artwork-5.png"
 
     if not frame1.exists() or not frame2.exists():
         console.print(f"[red]ERROR: Test images not found in {test_images_dir}[/red]")
