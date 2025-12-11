@@ -13,7 +13,7 @@ Usage:
     python3 tests/test_telekinesis_phase3.py
 
 Requirements:
-    - ANTHROPIC_API_KEY environment variable set
+    - ANTHROPIC_API_KEY in .env file or environment variable
     - Test images in tests/test_images/
     - uv pip install rife-ncnn-vulkan-python-tntwise (optional, will fallback)
 """
@@ -21,6 +21,10 @@ Requirements:
 import os
 import sys
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables from .env
+load_dotenv()
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
