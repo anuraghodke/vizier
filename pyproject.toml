@@ -40,6 +40,9 @@ dependencies = [
     "opencv-python-headless>=4.10.0",
     "numpy>=2.2.0",
 
+    # Phase 3: RIFE neural frame interpolation
+    "rife-ncnn-vulkan-python-tntwise>=1.4.0",
+
     # Data Validation
     "pydantic>=2.10.0",
     "pydantic-settings>=2.7.0",

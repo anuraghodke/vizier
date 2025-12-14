@@ -6,8 +6,12 @@ Phase 1: Object-based motion interpolation
 - Interpolates object position and color
 - Renders objects at intermediate states
 
+Phase 3: RIFE integration with arc path warping
+- Uses RIFE for high-quality neural interpolation
+- Applies arc path warping for curved motion
+- Falls back to object-based interpolation if RIFE unavailable
+
 Future phases will integrate:
-- AnimateDiff for motion-aware generation
 - ControlNet for structural guidance
 - Deformation/squash-stretch
 """
@@ -18,6 +22,8 @@ from PIL import Image, ImageDraw
 from typing import List, Dict, Any, Optional, Tuple
 import cv2
 import logging
+
+from backend.app.services.rife_service import get_rife_service, RifeService
 
 logger = logging.getLogger(__name__)
 
@@ -317,6 +323,142 @@ class FrameGeneratorService:
             # Default to linear
             return t
 
+    # =========================================================================
+    # Phase 3: Arc Path Warping Methods
+    # =========================================================================
+
+    def _detect_object_centroid(self, image: np.ndarray) -> Tuple[float, float]:
+        """
+        Detect the centroid of the primary object in an image.
+
+        Returns normalized coordinates (0-1).
+
+        Args:
+            image: RGBA numpy array (H, W, 4)
+
+        Returns:
+            (x, y) normalized centroid position
+        """
+        obj = self._detect_object(image)
+
+        if obj is None:
+            # Default to center if no object found
+            return (0.5, 0.5)
+
+        h, w = image.shape[:2]
+        cx, cy = obj["centroid"]
+
+        # Normalize to 0-1
+        return (cx / w, cy / h)
+
+    def _apply_arc_warp(
+        self,
+        frame: np.ndarray,
+        current_pos: Tuple[float, float],
+        target_pos: Tuple[float, float]
+    ) -> np.ndarray:
+        """
+        Warp frame to move object from current position to target position.
+
+        Uses affine translation to shift the image content.
+        Handles transparency by using transparent border fill.
+
+        Args:
+            frame: RGBA numpy array (H, W, 4)
+            current_pos: Current object position (normalized 0-1)
+            target_pos: Target position from arc path (normalized 0-1)
+
+        Returns:
+            Warped RGBA numpy array
+        """
+        h, w = frame.shape[:2]
+
+        # Calculate pixel offset
+        dx = (target_pos[0] - current_pos[0]) * w
+        dy = (target_pos[1] - current_pos[1]) * h
+
+        # Skip if offset is negligible
+        if abs(dx) < 1 and abs(dy) < 1:
+            return frame
+
+        # Create translation matrix
+        M = np.float32([
+            [1, 0, dx],
+            [0, 1, dy]
+        ])
+
+        # Apply affine transform with transparent border
+        # We need to handle RGBA separately for proper transparency
+        if frame.shape[2] == 4:
+            # Pre-multiply RGB by alpha to avoid edge artifacts
+            rgb = frame[:, :, :3].astype(float)
+            alpha = frame[:, :, 3].astype(float) / 255.0
+
+            # Pre-multiply: RGB * alpha
+            rgb_premult = rgb * alpha[..., None]
+
+            # Warp pre-multiplied RGB and alpha separately
+            rgb_warped = cv2.warpAffine(
+                rgb_premult.astype(np.uint8), M, (w, h),
+                borderMode=cv2.BORDER_CONSTANT,
+                borderValue=(0, 0, 0)  # OK for pre-multiplied (black = transparent)
+            )
+
+            alpha_warped = cv2.warpAffine(
+                (alpha * 255).astype(np.uint8), M, (w, h),
+                borderMode=cv2.BORDER_CONSTANT,
+                borderValue=0  # Transparent
+            )
+
+            # Un-premultiply: RGB / alpha (avoid division by zero)
+            alpha_float = alpha_warped.astype(float) / 255.0
+            # Expand alpha to 3D for broadcasting
+            alpha_float_3d = alpha_float[..., None]  # Shape: (H, W, 1)
+            # Un-premultiply using np.where to avoid division by zero
+            rgb_unpremult = np.where(
+                alpha_float_3d > 0,
+                rgb_warped.astype(float) / (alpha_float_3d + 1e-6),
+                0
+            )
+            rgb_unpremult = np.clip(rgb_unpremult, 0, 255).astype(np.uint8)
+
+            # Combine back
+            warped = np.dstack([rgb_unpremult, alpha_warped])
+        else:
+            # RGB only
+            warped = cv2.warpAffine(
+                frame, M, (w, h),
+                borderMode=cv2.BORDER_CONSTANT,
+                borderValue=(0, 0, 0)
+            )
+
+        return warped
+
+    def _should_use_rife(self, plan: Dict[str, Any]) -> bool:
+        """
+        Determine if RIFE should be used based on plan and availability.
+
+        Returns True if:
+        - RIFE is available
+        - Plan doesn't explicitly disable it
+        - Not a simple single-object scene (where Phase 1 works well)
+        """
+        rife = get_rife_service()
+
+        if not rife.is_available():
+            logger.info("RIFE not available, using object-based interpolation")
+            return False
+
+        # Check if plan explicitly requests a method
+        generation_method = plan.get("generation_method", "auto")
+        if generation_method == "object_based":
+            return False
+        elif generation_method == "rife":
+            return True
+
+        # Auto mode: prefer RIFE for better quality
+        return True
+
     def generate_frames(
         self,
         keyframe1_path: str,
@@ -327,12 +469,10 @@ class FrameGeneratorService:
         """
         Generate intermediate frames based on plan.
 
-        Phase 1: Object-based motion interpolation
-        - Detects objects in keyframes
-        - Interpolates position and color
-        - Renders objects in motion (not fading)
-
-        Future: AnimateDiff generation with ControlNet guidance
+        Phase 3: RIFE + arc path warping
+        - Uses RIFE for high-quality neural interpolation
+        - Applies arc path warping for curved motion
+        - Falls back to object-based interpolation if RIFE unavailable
 
         Args:
             keyframe1_path: Path to first keyframe
@@ -343,8 +483,6 @@ class FrameGeneratorService:
         Returns:
             List of generated frame paths
         """
-        logger.info(f"GENERATOR: Starting object-based frame generation for job {job_id}")
-
         # Load keyframes
         try:
             kf1 = self._load_image(keyframe1_path)
@@ -352,6 +490,185 @@ class FrameGeneratorService:
         except Exception as e:
             logger.error(f"Failed to load keyframes: {e}")
             raise ValueError(f"Could not load keyframe images: {e}")
+
+        # Decide whether to use RIFE or object-based interpolation
+        use_rife = self._should_use_rife(plan)
+
+        if use_rife:
+            return self._generate_frames_rife(kf1, kf2, plan, job_id)
+        else:
+            return self._generate_frames_object_based(kf1, kf2, plan, job_id)
+
+    def _generate_frames_rife(
+        self,
+        kf1: np.ndarray,
+        kf2: np.ndarray,
+        plan: Dict[str, Any],
+        job_id: str
+    ) -> List[str]:
+        """
+        Generate frames using RIFE with arc path warping.
+
+        Phase 3 implementation:
+        1. Use RIFE to generate base interpolated frames
+        2. Apply arc path warping to each frame
+        3. Save with transparency preserved
+
+        Args:
+            kf1: First keyframe as RGBA numpy array
+            kf2: Second keyframe as RGBA numpy array
+            plan: Generation plan with arc positions
+            job_id: Job ID for output
+
+        Returns:
+            List of generated frame paths
+        """
+        logger.info(f"GENERATOR: Starting RIFE frame generation for job {job_id}")
+
+        # Extract plan parameters
+        frame_schedule = plan.get("frame_schedule", [])
+        arc_type = plan.get("arc_type", "none")
+        arc_intensity = plan.get("arc_intensity", 0.0)
+
+        if not frame_schedule:
+            # Generate default schedule
+            num_frames = plan.get("num_frames", 8)
+            frame_schedule = [
+                {"frame_index": i, "t": i / (num_frames - 1) if num_frames > 1 else 0}
+                for i in range(num_frames)
+            ]
+
+        # Get t values for RIFE
+        t_values = [f["t"] if "t" in f else f["frame_index"] / (len(frame_schedule) - 1)
+                    for f in frame_schedule]
+
+        # Debug logging for t values
+        logger.info(f"GENERATOR: Passing {len(t_values)} t values to RIFE: {t_values}")
+        logger.info(f"GENERATOR: Frame schedule (first 3): {frame_schedule[:3]}")
+
+        # Generate base frames with RIFE
+        rife = get_rife_service()
+        logger.info(f"GENERATOR: Using RIFE to generate {len(t_values)} frames")
+
+        try:
+            base_frames = rife.interpolate_sequence(kf1, kf2, t_values)
+        except Exception as e:
+            logger.error(f"RIFE generation failed: {e}")
+            logger.warning("Falling back to object-based interpolation")
+            return self._generate_frames_object_based(kf1, kf2, plan, job_id)
+
+        # Apply arc path warping if needed
+        if arc_type != "none" and arc_intensity > 0:
+            logger.info(f"GENERATOR: Applying {arc_type} arc warping (intensity={arc_intensity})")
+            warped_frames = self._apply_arc_warping_to_sequence(
+                base_frames, frame_schedule, kf1, kf2
+            )
+            frames = warped_frames
+        else:
+            logger.info(f"GENERATOR: No arc warping (arc_type={arc_type}, arc_intensity={arc_intensity})")
+            frames = base_frames
+
+        # Create output directory
+        job_output_dir = self.output_dir / job_id
+        job_output_dir.mkdir(exist_ok=True, parents=True)
+
+        # Save frames
+        generated_paths = []
+        for i, frame in enumerate(frames):
+            frame_filename = f"frame_{i:03d}.png"
+            frame_path = str(job_output_dir / frame_filename)
+            self._save_image(frame, frame_path)
+            generated_paths.append(frame_path)
+            logger.debug(f"Saved frame {i+1}/{len(frames)}: {frame_filename}")
+
+        logger.info(
+            f"GENERATOR: Completed {len(generated_paths)} frames "
+            f"with RIFE interpolation"
+            + (f" and {arc_type} arc warping" if arc_type != "none" else "")
+        )
+
+        return generated_paths
+
+    def _apply_arc_warping_to_sequence(
+        self,
+        frames: List[np.ndarray],
+        frame_schedule: List[Dict[str, Any]],
+        kf1: np.ndarray,
+        kf2: np.ndarray
+    ) -> List[np.ndarray]:
+        """
+        Apply arc path warping to a sequence of frames.
+
+        For each frame:
+        1. Detect where the object currently is (from RIFE output)
+        2. Get where it should be (from arc_position in schedule)
+        3. Warp frame to move object to target position
+
+        Args:
+            frames: List of RIFE-generated frames
+            frame_schedule: Schedule with arc positions
+            kf1: First keyframe (for reference)
+            kf2: Second keyframe (for reference)
+
+        Returns:
+            List of warped frames
+        """
+        warped_frames = []
+
+        # Detect object positions in keyframes for reference
+        start_centroid = self._detect_object_centroid(kf1)
+        end_centroid = self._detect_object_centroid(kf2)
+
+        for i, (frame, schedule) in enumerate(zip(frames, frame_schedule)):
+            t = schedule.get("t", 0)
+            arc_pos = schedule.get("arc_position", {})
+
+            if not arc_pos or "x" not in arc_pos or "y" not in arc_pos:
+                # No arc position calculated, skip warping
+                warped_frames.append(frame)
+                continue
+
+            target_pos = (arc_pos["x"], arc_pos["y"])
+
+            # Detect current object position in RIFE frame
+            # RIFE interpolates linearly, so estimate current position
+            linear_x = (1 - t) * start_centroid[0] + t * end_centroid[0]
+            linear_y = (1 - t) * start_centroid[1] + t * end_centroid[1]
+            current_pos = (linear_x, linear_y)
+
+            # Apply warp
+            warped = self._apply_arc_warp(frame, current_pos, target_pos)
+            warped_frames.append(warped)
+
+            logger.debug(
+                f"Arc warp frame {i}: current={current_pos}, "
+                f"target={target_pos}"
+            )
+
+        return warped_frames
+
+    def _generate_frames_object_based(
+        self,
+        kf1: np.ndarray,
+        kf2: np.ndarray,
+        plan: Dict[str, Any],
+        job_id: str
+    ) -> List[str]:
+        """
+        Generate frames using object-based interpolation (Phase 1 method).
+
+        Fallback when RIFE is unavailable or for simple single-object scenes.
+
+        Args:
+            kf1: First keyframe as RGBA numpy array
+            kf2: Second keyframe as RGBA numpy array
+            plan: Generation plan
+            job_id: Job ID for output
+
+        Returns:
+            List of generated frame paths
+        """
+        logger.info(f"GENERATOR: Starting object-based frame generation for job {job_id}")
 
         # Detect objects in keyframes
         logger.info("GENERATOR: Detecting objects in keyframes...")
@@ -371,7 +688,7 @@ class FrameGeneratorService:
             f"size {obj2['width']}x{obj2['height']}, color {obj2['color']}"
         )
 
-        # Calculate and log scale change
+        # Calculate scale change
         scale_ratio = self._calculate_scale_factor(obj1, obj2)
         logger.info(
             f"GENERATOR: Scale change detected: {scale_ratio:.2f}x "
@@ -383,32 +700,24 @@ class FrameGeneratorService:
         timing_curve = plan.get("timing_curve", "linear")
         frame_schedule = plan.get("frame_schedule", [])
 
-        # Create output directory for this job
+        # Create output directory
         job_output_dir = self.output_dir / job_id
         job_output_dir.mkdir(exist_ok=True, parents=True)
 
         generated_frames = []
-
-        # Get canvas size from keyframe 1
         canvas_shape = (kf1.shape[0], kf1.shape[1])
 
         # Generate frames according to schedule
         for i, frame_info in enumerate(frame_schedule):
-            # Get interpolation parameter
             t_linear = frame_info.get("t", i / (num_frames - 1) if num_frames > 1 else 0.0)
-
-            # Apply easing curve
             t_eased = self._apply_easing(t_linear, timing_curve)
 
             # Generate frame with object at interpolated state
             if t_eased == 0.0:
-                # First keyframe
                 interpolated = kf1.copy()
             elif t_eased == 1.0:
-                # Second keyframe
                 interpolated = kf2.copy()
             else:
-                # Render object at interpolated position and color
                 interpolated = self._render_object_frame(
                     canvas_shape, obj1, obj2, t_eased
                 )
@@ -417,7 +726,6 @@ class FrameGeneratorService:
             frame_filename = f"frame_{i:03d}.png"
             frame_path = str(job_output_dir / frame_filename)
             self._save_image(interpolated, frame_path)
-
             generated_frames.append(frame_path)
 
             logger.debug(

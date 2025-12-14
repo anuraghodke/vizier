@@ -178,7 +178,8 @@ def generate_multi_frame_sequence(
     keyframe_paths: List[str],
     frame_counts: List[int],
     output_dir: str = "outputs/multi_frame_sequence",
-    timing_curve: str = "linear"
+    timing_curve: str = "linear",
+    use_rife: bool = True
 ) -> List[str]:
     """
     Generate interpolated frames between multiple keyframes.
@@ -188,6 +189,7 @@ def generate_multi_frame_sequence(
         frame_counts: List of n-1 integers specifying frames between each pair
         output_dir: Directory to save output frames
         timing_curve: Easing curve (linear, ease-in-out, ease-in, ease-out)
+        use_rife: Use RIFE neural interpolation (True) or object-based (False)
 
     Returns:
         List of all generated frame paths (including keyframes)
@@ -265,7 +267,8 @@ def generate_multi_frame_sequence(
             plan = {
                 "num_frames": total_frames_in_segment,
                 "timing_curve": timing_curve,
-                "frame_schedule": frame_schedule
+                "frame_schedule": frame_schedule,
+                "generation_method": "rife" if use_rife else "object_based"
             }
 
             # Generate frames for this pair
@@ -334,7 +337,7 @@ KEYFRAME_FOLDER = "tests/test_images/head-perspective"
 
 # Specify number of frames to generate between each consecutive pair
 # Option 1: Use a single value (applies to all pairs)
-FRAMES_BETWEEN = 2
+FRAMES_BETWEEN = 1
 
 # Option 2: Use an array to specify different counts for each pair
 # Length must be (number of keyframes) - 1
@@ -352,6 +355,11 @@ OUTPUT_DIR = None
 
 # Timing curve: "linear", "ease-in-out", "ease-in", "ease-out"
 TIMING_CURVE = "linear"
+
+# Use RIFE for neural interpolation (True) or object-based interpolation (False)
+# RIFE produces higher quality results but is slower (~3 sec/frame on CPU)
+# Object-based is faster but only works well for simple single-object scenes
+USE_RIFE = True
 
 # ============================================================================
 
@@ -381,6 +389,11 @@ def main(
         "linear",
         "--timing-curve", "-t",
         help="Timing curve for interpolation: linear, ease-in-out, ease-in, ease-out"
+    ),
+    use_rife: bool = typer.Option(
+        True,
+        "--use-rife/--no-rife",
+        help="Use RIFE neural interpolation (slower, higher quality) or object-based (faster, simple scenes only)"
     ),
 ):
     """
@@ -431,7 +444,8 @@ def main(
             keyframe_paths=keyframe_paths,
             frame_counts=counts,
             output_dir=output_dir,
-            timing_curve=timing_curve
+            timing_curve=timing_curve,
+            use_rife=use_rife
         )
 
         typer.echo("\nSuccess! Generated frames:")
@@ -458,6 +472,7 @@ if __name__ == "__main__":
             logger.info(f"  FRAMES_BETWEEN: {FRAMES_BETWEEN}")
             logger.info(f"  OUTPUT_DIR: {OUTPUT_DIR}")
             logger.info(f"  TIMING_CURVE: {TIMING_CURVE}")
+            logger.info(f"  USE_RIFE: {USE_RIFE}")
 
             # Load keyframes from folder
             logger.info("\nLoading keyframes from folder...")
@@ -483,7 +498,8 @@ if __name__ == "__main__":
                 keyframe_paths=keyframe_paths,
                 frame_counts=frame_counts,
                 output_dir=output_dir,
-                timing_curve=TIMING_CURVE
+                timing_curve=TIMING_CURVE,
+                use_rife=USE_RIFE
             )
 
             print("\nSuccess! Generated frames:")
