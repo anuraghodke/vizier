@@ -523,7 +523,7 @@ class FrameGeneratorService:
             ]
 
         # Get t values for RIFE
-        t_values = [f.get("t", f["frame_index"] / (len(frame_schedule) - 1))
+        t_values = [f["t"] if "t" in f else f["frame_index"] / (len(frame_schedule) - 1)
                     for f in frame_schedule]
 
         # Generate base frames with RIFE

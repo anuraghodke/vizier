@@ -60,6 +60,7 @@ class RifeService:
         self.gpu_id = gpu_id
         self.model = model
         self._rife = None
+        self._initialization_failed = False
 
         if not _RIFE_AVAILABLE:
             logger.warning(
@@ -75,24 +76,48 @@ class RifeService:
         Returns:
             True if RIFE is available and initialized
         """
-        if not _RIFE_AVAILABLE:
+        if not _RIFE_AVAILABLE or self._initialization_failed:
             return False
 
         if self._rife is None:
             try:
-                # Initialize RIFE with specified GPU
+                # Check if model files exist before attempting initialization
+                # This prevents segfaults from missing model files
+                import site
+                from pathlib import Path
+                site_packages = site.getsitepackages()
+                model_found = False
+                for sp in site_packages:
+                    model_path = Path(sp) / "rife_ncnn_vulkan_python" / "models"
+                    if model_path.exists():
+                        model_found = True
+                        break
+
+                if not model_found:
+                    logger.error(
+                        "RIFE models not found. Please reinstall with: "
+                        "pip install --force-reinstall rife-ncnn-vulkan-python-tntwise"
+                    )
+                    self._initialization_failed = True
+                    return False
+
+                # Initialize RIFE with specified GPU and model
                 # gpu_id=-1 uses CPU, gpu_id=0+ uses that GPU
-                self._rife = _Rife(gpuid=self.gpu_id)
-                logger.info(f"RIFE initialized (gpu_id={self.gpu_id})")
+                self._rife = _Rife(gpuid=self.gpu_id, model=self.model)
+                logger.info(f"RIFE initialized (gpu_id={self.gpu_id}, model={self.model})")
             except Exception as e:
                 logger.error(f"Failed to initialize RIFE: {e}")
+                self._initialization_failed = True
                 return False
 
         return True
 
     def is_available(self) -> bool:
         """Check if RIFE is available for use."""
-        return _RIFE_AVAILABLE
+        if not _RIFE_AVAILABLE:
+            return False
+        # Try to initialize to see if it actually works
+        return self._ensure_initialized()
 
     def interpolate(
         self,
