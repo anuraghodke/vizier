@@ -390,24 +390,40 @@ class FrameGeneratorService:
         # Apply affine transform with transparent border
         # We need to handle RGBA separately for proper transparency
         if frame.shape[2] == 4:
-            # Warp RGB channels
-            rgb = frame[:, :, :3]
-            alpha = frame[:, :, 3]
+            # Pre-multiply RGB by alpha to avoid edge artifacts
+            rgb = frame[:, :, :3].astype(float)
+            alpha = frame[:, :, 3].astype(float) / 255.0
 
+            # Pre-multiply: RGB * alpha
+            rgb_premult = rgb * alpha[..., None]
+
+            # Warp pre-multiplied RGB and alpha separately
             rgb_warped = cv2.warpAffine(
-                rgb, M, (w, h),
+                rgb_premult.astype(np.uint8), M, (w, h),
                 borderMode=cv2.BORDER_CONSTANT,
-                borderValue=(0, 0, 0)
+                borderValue=(0, 0, 0)  # OK for pre-multiplied (black = transparent)
             )
 
             alpha_warped = cv2.warpAffine(
-                alpha, M, (w, h),
+                (alpha * 255).astype(np.uint8), M, (w, h),
                 borderMode=cv2.BORDER_CONSTANT,
-                borderValue=0
+                borderValue=0  # Transparent
             )
 
+            # Un-premultiply: RGB / alpha (avoid division by zero)
+            alpha_float = alpha_warped.astype(float) / 255.0
+            # Expand alpha to 3D for broadcasting
+            alpha_float_3d = alpha_float[..., None]  # Shape: (H, W, 1)
+            # Un-premultiply using np.where to avoid division by zero
+            rgb_unpremult = np.where(
+                alpha_float_3d > 0,
+                rgb_warped.astype(float) / (alpha_float_3d + 1e-6),
+                0
+            )
+            rgb_unpremult = np.clip(rgb_unpremult, 0, 255).astype(np.uint8)
+
             # Combine back
-            warped = np.dstack([rgb_warped, alpha_warped])
+            warped = np.dstack([rgb_unpremult, alpha_warped])
         else:
             # RGB only
             warped = cv2.warpAffine(
@@ -526,6 +542,10 @@ class FrameGeneratorService:
         t_values = [f["t"] if "t" in f else f["frame_index"] / (len(frame_schedule) - 1)
                     for f in frame_schedule]
 
+        # Debug logging for t values
+        logger.info(f"GENERATOR: Passing {len(t_values)} t values to RIFE: {t_values}")
+        logger.info(f"GENERATOR: Frame schedule (first 3): {frame_schedule[:3]}")
+
         # Generate base frames with RIFE
         rife = get_rife_service()
         logger.info(f"GENERATOR: Using RIFE to generate {len(t_values)} frames")
@@ -545,6 +565,7 @@ class FrameGeneratorService:
             )
             frames = warped_frames
         else:
+            logger.info(f"GENERATOR: No arc warping (arc_type={arc_type}, arc_intensity={arc_intensity})")
             frames = base_frames
 
         # Create output directory
@@ -602,7 +623,7 @@ class FrameGeneratorService:
             t = schedule.get("t", 0)
             arc_pos = schedule.get("arc_position", {})
 
-            if not arc_pos or (arc_pos.get("x", 0) == 0 and arc_pos.get("y", 0) == 0):
+            if not arc_pos or "x" not in arc_pos or "y" not in arc_pos:
                 # No arc position calculated, skip warping
                 warped_frames.append(frame)
                 continue

@@ -119,6 +119,56 @@ class RifeService:
         # Try to initialize to see if it actually works
         return self._ensure_initialized()
 
+    def _ensure_rgb_has_color(self, frame: np.ndarray) -> np.ndarray:
+        """
+        Fix images where RGB is black but alpha defines the shape.
+
+        PNG images with transparency often have RGB=(0,0,0) for all pixels,
+        relying on alpha to define the visible shape. This causes RIFE to
+        interpolate black colors. This method extracts actual colors and
+        applies them to the visible regions.
+
+        Args:
+            frame: RGBA numpy array (H, W, 4)
+
+        Returns:
+            Frame with RGB channels populated with actual colors
+        """
+        if frame.shape[2] != 4:
+            return frame  # Not RGBA, no fix needed
+
+        rgb = frame[:, :, :3]
+        alpha = frame[:, :, 3]
+
+        # Check if this looks like a transparent PNG with black RGB
+        visible_pixels = alpha > 10  # Pixels that are somewhat visible
+        if not visible_pixels.any():
+            return frame  # No visible pixels
+
+        rgb_visible = rgb[visible_pixels]
+        mean_intensity = rgb_visible.mean()
+
+        # If RGB is very dark (mean < 20) but alpha shows a shape, fix it
+        if mean_intensity < 20 and visible_pixels.sum() > 100:
+            # Extract non-black colors if any exist
+            non_black = (rgb_visible.sum(axis=1) > 30)
+            if non_black.any():
+                # Use the median color of non-black pixels
+                target_color = np.median(rgb_visible[non_black], axis=0).astype(np.uint8)
+                logger.info(f"RIFE: Detected color {target_color} from non-black pixels")
+            else:
+                # Default to white if no color information
+                target_color = np.array([255, 255, 255], dtype=np.uint8)
+                logger.warning("RIFE: No color data found, using white as default")
+
+            # Apply color to visible regions
+            result = frame.copy()
+            result[visible_pixels, :3] = target_color
+            logger.info(f"RIFE: Fixed {visible_pixels.sum()} pixels from black to color")
+            return result
+
+        return frame
+
     def interpolate(
         self,
         frame1: np.ndarray,
@@ -148,6 +198,10 @@ class RifeService:
             return self._alpha_blend(frame1, frame2, t)
 
         try:
+            # Fix transparent PNGs with black RGB data
+            frame1 = self._ensure_rgb_has_color(frame1)
+            frame2 = self._ensure_rgb_has_color(frame2)
+
             # RIFE expects RGB PIL images, handle RGBA
             alpha1 = frame1[:, :, 3] if frame1.shape[2] == 4 else None
             alpha2 = frame2[:, :, 3] if frame2.shape[2] == 4 else None
@@ -155,6 +209,12 @@ class RifeService:
             # Convert to RGB PIL images
             rgb1 = frame1[:, :, :3]
             rgb2 = frame2[:, :, :3]
+
+            # Debug logging for color values
+            logger.debug(f"RIFE input frame1 RGB shape: {rgb1.shape}, dtype: {rgb1.dtype}, "
+                        f"mean: {rgb1.mean():.1f}, min: {rgb1.min()}, max: {rgb1.max()}")
+            logger.debug(f"RIFE input frame2 RGB shape: {rgb2.shape}, dtype: {rgb2.dtype}, "
+                        f"mean: {rgb2.mean():.1f}, min: {rgb2.min()}, max: {rgb2.max()}")
 
             pil1 = Image.fromarray(rgb1, mode="RGB")
             pil2 = Image.fromarray(rgb2, mode="RGB")
@@ -190,6 +250,10 @@ class RifeService:
 
             # Convert back to numpy
             result_rgb = np.array(result_pil)
+
+            # Debug logging for RIFE output
+            logger.debug(f"RIFE output RGB shape: {result_rgb.shape}, dtype: {result_rgb.dtype}, "
+                        f"mean: {result_rgb.mean():.1f}, min: {result_rgb.min()}, max: {result_rgb.max()}")
 
             # Handle alpha channel
             if alpha1 is not None or alpha2 is not None:

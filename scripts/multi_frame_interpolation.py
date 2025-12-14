@@ -333,11 +333,11 @@ def generate_multi_frame_sequence(
 
 # Specify folder containing keyframe images (absolute or relative to project root)
 # Images should be enumerated with trailing numbers (e.g., frame-1.png, frame-2.png)
-KEYFRAME_FOLDER = "tests/test_images/simple-ball"
+KEYFRAME_FOLDER = "tests/test_images/head-perspective"
 
 # Specify number of frames to generate between each consecutive pair
 # Option 1: Use a single value (applies to all pairs)
-FRAMES_BETWEEN = 4
+FRAMES_BETWEEN = 1
 
 # Option 2: Use an array to specify different counts for each pair
 # Length must be (number of keyframes) - 1
@@ -359,7 +359,7 @@ TIMING_CURVE = "linear"
 # Use RIFE for neural interpolation (True) or object-based interpolation (False)
 # RIFE produces higher quality results but is slower (~3 sec/frame on CPU)
 # Object-based is faster but only works well for simple single-object scenes
-USE_RIFE = False
+USE_RIFE = True
 
 # ============================================================================
 
